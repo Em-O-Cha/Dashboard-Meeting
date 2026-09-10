@@ -161,7 +161,7 @@ function loadAll() {
   apiGet('getDashboardData', { dateFrom: STATE.dateFrom, dateTo: STATE.dateTo }).then(function (r) {
     if (!r || !r.success) { showSectionError_(DATE_DEPENDENT_KEYS_, r ? r.error : 'โหลดไม่สำเร็จ'); return; }
     lastDashboardData = r;
-    renderOverview(r.overview);
+    renderOverview(r.overview, r.cancelledOrdersExcluded);
     renderProductGroups(r.productGroups);
     renderBestSellers(r.productGroups);
     renderByAd(r.byAd);
@@ -209,9 +209,10 @@ function baseChartOptions_(scalesExtra) {
 
 // ==================== Report 1: Overview ====================
 
-function renderOverview(ov) {
+function renderOverview(ov, cancelledCount) {
   var body = document.getElementById('overview-body');
   var prev = ov.previousPeriod;
+  var cancelledNote = cancelledCount ? '<div class="info-note">ไม่รวมออเดอร์ที่ยกเลิก ' + fmtNum(cancelledCount) + ' รายการ ในทุกรายงานของแดชบอร์ดนี้</div>' : '';
   var deltaCard = '';
   if (prev) {
     deltaCard = '<div class="stat-card"><div class="label">ยอดขายช่วงก่อนหน้า (' + prev.dateFrom + ' – ' + prev.dateTo + ')</div>'
@@ -220,7 +221,8 @@ function renderOverview(ov) {
       + (prev.ordersChangePct !== null ? '<div class="delta ' + (prev.ordersChangePct >= 0 ? 'up' : 'down') + '">' + (prev.ordersChangePct >= 0 ? '▲' : '▼') + ' ' + Math.abs(prev.ordersChangePct).toFixed(1) + '% เทียบออเดอร์</div>' : '')
       + '</div>';
   }
-  body.innerHTML = '<div class="stat-grid">'
+  body.innerHTML = cancelledNote
+    + '<div class="stat-grid">'
     + '<div class="stat-card"><div class="label">ยอดขายรวม</div><div class="value">' + fmtMoney(ov.totalRevenue) + '</div></div>'
     + '<div class="stat-card"><div class="label">จำนวนออเดอร์</div><div class="value">' + fmtNum(ov.totalOrders) + '</div></div>'
     + '<div class="stat-card"><div class="label">มูลค่าเฉลี่ย/ออเดอร์ (AOV)</div><div class="value">' + fmtMoney(ov.aov) + '</div></div>'
@@ -234,7 +236,7 @@ function renderOverview(ov) {
     + '<div class="chart-wrap"><canvas id="overviewChart"></canvas></div>';
   drawOverviewChart(ov);
 }
-function setOverviewGranularity(g) { overviewGranularity = g; if (lastDashboardData) renderOverview(lastDashboardData.overview); }
+function setOverviewGranularity(g) { overviewGranularity = g; if (lastDashboardData) renderOverview(lastDashboardData.overview, lastDashboardData.cancelledOrdersExcluded); }
 function drawOverviewChart(ov) {
   var series = ov[overviewGranularity] || [];
   var keyName = overviewGranularity === 'daily' ? 'date' : (overviewGranularity === 'weekly' ? 'week' : 'month');
