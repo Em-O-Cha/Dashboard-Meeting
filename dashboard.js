@@ -162,7 +162,7 @@ function loadAll() {
   apiGet('getDashboardData', { dateFrom: STATE.dateFrom, dateTo: STATE.dateTo }).then(function (r) {
     if (!r || !r.success) { showSectionError_(DATE_DEPENDENT_KEYS_, r ? r.error : 'โหลดไม่สำเร็จ'); return; }
     lastDashboardData = r;
-    renderOverview(r.overview, r.cancelledOrdersExcluded);
+    renderOverview(r.overview, r.cancelledOrdersExcluded, r.unpaidLineShopExcluded);
     renderProductGroups(r.productGroups);
     renderBestSellers(r.productGroups);
     renderByAd(r.byAd);
@@ -210,10 +210,13 @@ function baseChartOptions_(scalesExtra) {
 
 // ==================== Report 1: Overview ====================
 
-function renderOverview(ov, cancelledCount) {
+function renderOverview(ov, cancelledCount, unpaidLineShopCount) {
   var body = document.getElementById('overview-body');
   var prev = ov.previousPeriod;
-  var cancelledNote = cancelledCount ? '<div class="info-note">ไม่รวมออเดอร์ที่ยกเลิก ' + fmtNum(cancelledCount) + ' รายการ ในทุกรายงานของแดชบอร์ดนี้</div>' : '';
+  var noteBits = [];
+  if (cancelledCount) noteBits.push('ไม่รวมออเดอร์ที่ยกเลิก ' + fmtNum(cancelledCount) + ' รายการ');
+  if (unpaidLineShopCount) noteBits.push('ไม่รวมออเดอร์ Line Shop ที่ยังไม่ชำระเงิน ' + fmtNum(unpaidLineShopCount) + ' รายการ');
+  var cancelledNote = noteBits.length ? ('<div class="info-note">' + noteBits.join(' · ') + ' ในทุกรายงานของแดชบอร์ดนี้</div>') : '';
   var deltaCard = '';
   if (prev) {
     deltaCard = '<div class="stat-card"><div class="label">ยอดขายช่วงก่อนหน้า (' + prev.dateFrom + ' – ' + prev.dateTo + ')</div>'
@@ -237,7 +240,7 @@ function renderOverview(ov, cancelledCount) {
     + '<div class="chart-wrap"><canvas id="overviewChart"></canvas></div>';
   drawOverviewChart(ov);
 }
-function setOverviewGranularity(g) { overviewGranularity = g; if (lastDashboardData) renderOverview(lastDashboardData.overview, lastDashboardData.cancelledOrdersExcluded); }
+function setOverviewGranularity(g) { overviewGranularity = g; if (lastDashboardData) renderOverview(lastDashboardData.overview, lastDashboardData.cancelledOrdersExcluded, lastDashboardData.unpaidLineShopExcluded); }
 function drawOverviewChart(ov) {
   var series = ov[overviewGranularity] || [];
   var keyName = overviewGranularity === 'daily' ? 'date' : (overviewGranularity === 'weekly' ? 'week' : 'month');
@@ -422,7 +425,8 @@ function openCustomerDetail(month) {
     if (!list.length) return '<div class="cd-section"><div class="cd-section-title">' + escHtml(title) + ' (0 คน)</div><div class="empty-note" style="padding:10px 0">ไม่มี</div></div>';
     var rows = list.map(function (c) {
       var ordersHtml = c.orders.map(function (o) {
-        return '<div class="cd-order">#' + escHtml(o.orderId) + ' · ' + escHtml(o.date) + ' · ' + fmtMoney(o.amount) + (o.ad ? ' · ' + escHtml(o.ad) : '') + '</div>';
+        var productsLine = (o.products && o.products.length) ? ('<div class="cd-order-products">' + escHtml(o.products.join(', ')) + '</div>') : '';
+        return '<div class="cd-order">#' + escHtml(o.orderId) + ' · ' + escHtml(o.date) + ' · ' + fmtMoney(o.amount) + (o.ad ? ' · ' + escHtml(o.ad) : '') + productsLine + '</div>';
       }).join('');
       return '<div class="cd-customer"><div class="cd-customer-label">' + escHtml(c.label) + ' <span class="tag tag-grouped">' + c.orderCount + ' ออเดอร์</span></div>' + ordersHtml + '</div>';
     }).join('');
