@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แดชบอร์ดรายงานยอดขาย — เอมโอชา</title>
+<link rel="icon" href="logo-em-o-cha.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap');
+:root{
+  --gd:#1a5c2a; --gm:#2e7d32; --gp:#e8f5e9; --gb:#c8e6c9;
+  --g6:#5f5555; --g8:#332525; --td:#302121;
+  --red:#a50d0c; --red2:#e4504d;
+  --brand-gradient:linear-gradient(135deg,#a50d0c 0%,#e4504d 55%,#a50d0c 100%);
+  --card-bg:#fff; --page-bg:#f4f5f3; --border:#eee;
+  --up:#2e7d32; --down:#c62828;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'Kanit',sans-serif;background:var(--page-bg);color:var(--td);min-height:100vh;}
+a{color:inherit;}
+button{font-family:'Kanit',sans-serif;cursor:pointer;}
+.sh{display:none !important;}
+
+/* ==================== Login gate ==================== */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.1);max-width:380px;width:100%;overflow:hidden;}
+.login-hd{background:linear-gradient(135deg,#a50d0c,#d85d5c);padding:28px 24px;text-align:center;color:#fff;}
+.login-hd img{width:64px;height:68px;object-fit:contain;margin:0 auto 8px;display:block;background:#fff;border-radius:10px;padding:3px;}
+.login-hd h1{font-size:18px;font-weight:600;}
+.login-hd p{font-size:12.5px;opacity:.9;margin-top:4px;}
+.login-bd{padding:24px;}
+.login-bd input{width:100%;height:46px;padding:0 14px;border:1.5px solid #eee;border-radius:10px;font-size:15px;font-family:'Kanit',sans-serif;margin-bottom:12px;}
+.login-bd input:focus{outline:none;border-color:var(--gm);}
+.login-bd button{width:100%;height:48px;border:none;border-radius:10px;background:var(--brand-gradient);color:#fff;font-size:15px;font-weight:600;box-shadow:0 5px 14px rgba(165,13,12,.35);}
+.login-bd button:disabled{opacity:.55;}
+.login-err{background:#ffebee;color:#c62828;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none;}
+.login-err.show{display:block;}
+.login-hint{font-size:11.5px;color:var(--g6);margin-top:14px;line-height:1.6;text-align:center;}
+
+/* ==================== App shell ==================== */
+#appShell{display:none;min-height:100vh;flex-direction:column;}
+#appShell.show{display:flex;}
+.topbar{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.topbar-brand{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
+.topbar-brand img{width:34px;height:36px;object-fit:contain;border-radius:6px;}
+.topbar-brand b{font-size:15px;}
+.topbar-brand span{display:block;font-size:11px;color:var(--g6);}
+.topbar-spacer{flex:1 1 auto;}
+.btn{border:none;border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:600;background:var(--brand-gradient);color:#fff;box-shadow:0 3px 10px rgba(165,13,12,.28);white-space:nowrap;}
+.btn:disabled{opacity:.55;}
+.btn-outline{background:#fff;color:var(--gm);border:1.5px solid var(--gm);box-shadow:none;}
+.btn-ghost{background:transparent;color:var(--g6);border:1.5px solid #ddd;box-shadow:none;}
+.btn-sm{padding:6px 12px;font-size:12.5px;border-radius:8px;}
+.btn-ai{background:linear-gradient(135deg,#5b3ec2,#8b5cf6);box-shadow:0 3px 10px rgba(91,62,194,.32);}
+
+.daterow{background:#fbfaf8;border-bottom:1px solid var(--border);}
+.daterow-inner{max-width:1280px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.preset-btn{border:1.5px solid #ddd;background:#fff;border-radius:20px;padding:6px 14px;font-size:12.5px;color:var(--g8);}
+.preset-btn.active{background:var(--gp);border-color:var(--gm);color:var(--gd);font-weight:600;}
+.daterow input[type=date]{height:36px;border:1.5px solid #ddd;border-radius:8px;padding:0 10px;font-family:'Kanit',sans-serif;font-size:13px;}
+.daterow-label{font-size:12px;color:var(--g6);}
+.range-summary{font-size:12px;color:var(--g6);margin-left:auto;}
+
+.navtabs{background:#fff;border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
+.navtabs-inner{max-width:1280px;margin:0 auto;padding:0 16px;display:flex;gap:4px;}
+.navtab{display:inline-block;padding:12px 14px;font-size:13px;color:var(--g6);border-bottom:2.5px solid transparent;font-weight:500;}
+.navtab.active{color:var(--gd);border-bottom-color:var(--gm);font-weight:600;}
+.navtab:hover{color:var(--gd);}
+
+main{max-width:1280px;margin:0 auto;padding:20px 16px 60px;width:100%;}
+section.report{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:20px;margin-bottom:20px;scroll-margin-top:110px;}
+.report-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.report-title{font-size:16px;font-weight:600;color:var(--td);display:flex;align-items:center;gap:8px;}
+.report-title .num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--gp);color:var(--gd);font-size:12px;font-weight:700;}
+.report-sub{font-size:12px;color:var(--g6);margin-top:4px;}
+.badge-static{font-size:10.5px;background:#fff3e0;color:#e65100;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+.stat-card{background:var(--gp);border-radius:12px;padding:14px 16px;}
+.stat-card .label{font-size:11.5px;color:var(--g6);}
+.stat-card .value{font-size:20px;font-weight:700;color:var(--gd);margin-top:4px;}
+.stat-card .delta{font-size:11.5px;margin-top:4px;font-weight:600;}
+.stat-card .delta.up{color:var(--up);}
+.stat-card .delta.down{color:var(--down);}
+
+.chart-wrap{position:relative;height:260px;margin-bottom:14px;}
+.chart-wrap.tall{height:320px;}
+
+table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.data-table th{text-align:left;padding:8px 10px;color:var(--g6);font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap;}
+table.data-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+table.data-table tbody tr:hover{background:#fafafa;}
+.table-scroll{overflow-x:auto;}
+.tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:600;}
+.tag-grouped{background:var(--gp);color:var(--gd);}
+.tag-ungrouped{background:#fff3e0;color:#e65100;}
+.rank-medal{font-weight:700;color:var(--g6);}
+
+.heatmap-wrap{overflow-x:auto;}
+.heatmap{border-collapse:collapse;font-size:10.5px;}
+.heatmap th{font-weight:500;color:var(--g6);padding:2px 4px;text-align:center;}
+.heatmap td{width:22px;height:20px;text-align:center;border-radius:3px;cursor:default;}
+.heatmap td.dowlabel{width:auto;text-align:right;padding-right:8px;color:var(--g6);font-weight:500;white-space:nowrap;}
+
+.empty-note{color:var(--g6);font-size:13px;text-align:center;padding:24px 0;}
+.error-note{color:#c62828;font-size:13px;background:#ffebee;border-radius:8px;padding:12px 14px;}
+.info-note{color:#5b84a8;font-size:12px;background:#e3f0fd;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6;}
+
+/* AI panel */
+.ai-panel{margin-top:16px;border-radius:12px;background:linear-gradient(135deg,#f5f1ff,#fdf5ff);border:1.5px solid #e4d9fb;padding:16px;display:none;}
+.ai-panel.show{display:block;}
+.ai-panel-hd{font-size:13px;font-weight:700;color:#5b3ec2;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.ai-summary{font-size:13.5px;line-height:1.7;margin-bottom:12px;}
+.ai-block-title{font-size:12.5px;font-weight:700;color:#5b3ec2;margin:12px 0 6px;}
+.ai-list{font-size:13px;line-height:1.7;padding-left:18px;}
+.ai-reco{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px;border:1px solid #ece3fb;}
+.ai-reco b{font-size:13.5px;color:#3e2a80;}
+.ai-reco .rationale{font-size:12.5px;color:var(--g6);margin-top:4px;line-height:1.6;}
+.ai-reco .steps{font-size:12.5px;margin-top:6px;padding-left:18px;line-height:1.7;}
+.ai-reco .tradeoffs{font-size:11.5px;color:#8d6e63;margin-top:6px;font-style:italic;}
+.ai-loading{font-size:13px;color:#5b3ec2;}
+
+/* Keyword manager modal */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-start;justify-content:center;padding:20px 16px;overflow-y:auto;}
+.mo.show{display:flex;}
+.mo-card{background:#fff;border-radius:16px;max-width:920px;width:100%;overflow:hidden;margin:20px 0;}
+.mo-hd{background:linear-gradient(135deg,#a50d0c,#d85d5c);padding:18px 20px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
+.mo-hd h2{font-size:16px;font-weight:600;}
+.mo-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;}
+.mo-bd{padding:20px;}
+.kw-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.kw-tab{padding:8px 16px;border-radius:20px;border:1.5px solid #ddd;font-size:13px;background:#fff;}
+.kw-tab.active{background:var(--gp);border-color:var(--gm);color:var(--gd);font-weight:600;}
+.kw-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media (max-width:760px){.kw-cols{grid-template-columns:1fr;}}
+.kw-col-title{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--g8);}
+.kw-group-row{border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;}
+.kw-group-row input.gname{width:100%;border:none;font-weight:700;font-size:14px;margin-bottom:6px;font-family:'Kanit',sans-serif;}
+.kw-group-row input.gname:focus{outline:none;}
+.kw-group-row textarea.gkw{width:100%;border:1px solid #eee;border-radius:8px;padding:8px;font-size:12.5px;font-family:'Kanit',sans-serif;resize:vertical;min-height:44px;}
+.kw-group-row .row-actions{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.kw-group-row .preview-count{font-size:11px;color:var(--g6);}
+.kw-del-btn{background:transparent;color:#c62828;border:none;font-size:11.5px;font-weight:600;}
+.kw-raw-list{max-height:520px;overflow-y:auto;}
+.kw-raw-item{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 8px;padding:8px 4px;border-bottom:1px solid var(--border);font-size:12.5px;}
+.kw-raw-item .nm{flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.kw-raw-item .amt{color:var(--g6);white-space:nowrap;}
+.kw-target-select{max-width:150px;height:28px;border:1px solid #ddd;border-radius:6px;font-size:11px;font-family:'Kanit',sans-serif;background:#fff;}
+.kw-quickadd{background:var(--gp);color:var(--gd);border:none;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;white-space:nowrap;}
+.kw-search{width:100%;height:38px;border:1.5px solid #eee;border-radius:8px;padding:0 12px;font-size:13px;font-family:'Kanit',sans-serif;margin-bottom:10px;}
+
+footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
+</style>
+</head>
+<body>
+
+<!-- ==================== Login gate ==================== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-hd">
+      <img src="logo-em-o-cha.png" alt="Em-O-Cha">
+      <h1>แดชบอร์ดรายงานยอดขาย</h1>
+      <p>คนรักเอมโอชา คลับ — สำหรับทีมงานเท่านั้น</p>
+    </div>
+    <div class="login-bd">
+      <div class="login-err" id="loginErr"></div>
+      <input type="password" id="loginPassword" placeholder="รหัสผ่านแดชบอร์ด" autocomplete="current-password">
+      <button id="loginBtn" onclick="handleLogin()">🔐 เข้าสู่ระบบ</button>
+      <p class="login-hint">รหัสผ่านนี้ถูกตั้งค่าไว้ในฝั่ง Apps Script (Script Properties) โดยผู้ดูแลระบบ ไม่ใช่รหัสผ่าน LINE ของคุณ</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Main app ==================== -->
+<div id="appShell">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand">
+        <img src="logo-em-o-cha.png" alt="Em-O-Cha">
+        <div><b>แดชบอร์ดยอดขาย</b><span>เอมโอชา</span></div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="btn btn-ai btn-sm" onclick="openOverallAI()">🤖 AI สรุปภาพรวมทั้งหมด</button>
+      <button class="btn btn-outline btn-sm" onclick="openKeywordManager('product')">🏷️ จัดการ Keyword สินค้า</button>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <div class="daterow">
+    <div class="daterow-inner">
+      <span class="daterow-label">ช่วงวันที่:</span>
+      <button class="preset-btn" data-preset="today">วันนี้</button>
+      <button class="preset-btn" data-preset="7d">7 วันที่ผ่านมา</button>
+      <button class="preset-btn" data-preset="30d">30 วันที่ผ่านมา</button>
+      <button class="preset-btn active" data-preset="thisMonth">เดือนนี้</button>
+      <button class="preset-btn" data-preset="lastMonth">เดือนที่แล้ว</button>
+      <input type="date" id="dateFromInput">
+      <span style="font-size:12px;color:var(--g6)">ถึง</span>
+      <input type="date" id="dateToInput">
+      <button class="btn btn-sm" onclick="applyDateRange()">แสดงผล</button>
+      <span class="range-summary" id="rangeSummary"></span>
+    </div>
+  </div>
+
+  <div class="navtabs">
+    <div class="navtabs-inner" id="navTabs"></div>
+  </div>
+
+  <main id="mainContent">
+
+    <section class="report" id="sec-overview">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">1</span> ยอดขายรวม — รายวัน / รายสัปดาห์ / รายเดือน และ AOV</div>
+        <div class="report-sub">ยอดขายรวม จำนวนออเดอร์ มูลค่าเฉลี่ยต่อออเดอร์ เทียบกับช่วงก่อนหน้าที่มีความยาวเท่ากัน</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="overview">🤖 วิเคราะห์</button>
+      </div>
+      <div id="overview-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-overview"></div>
+    </section>
+
+    <section class="report" id="sec-productGroups">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">2</span> สินค้าที่ขายได้ (จัดกลุ่มด้วย Keyword)</div>
+        <div class="report-sub">สินค้าที่บันทึกชื่อไม่ตรงกันแต่เป็นตัวเดียวกัน จะถูกรวมเป็นกลุ่มเดียวกันตาม Keyword ที่ตั้งค่าไว้</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="productGroups">🤖 วิเคราะห์</button>
+      </div>
+      <div id="productGroups-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-productGroups"></div>
+    </section>
+
+    <section class="report" id="sec-bestSellers">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">3</span> สินค้าขายดี (Top 10)</div>
+        <div class="report-sub">จัดอันดับจากยอดขายกลุ่มสินค้าเดียวกันกับรายงานข้อ 2</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="bestSellers">🤖 วิเคราะห์</button>
+      </div>
+      <div id="bestSellers-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-bestSellers"></div>
+    </section>
+
+    <section class="report" id="sec-byAd">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">4</span> ยอดขายแต่ละ Ad (ช่องทางขาย)</div>
+        <div class="report-sub">Shopee / TikTok / Line Shop / Facebook / ฯลฯ ตามคอลัมน์ "Ad" ในชีต Revenue</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="byAd">🤖 วิเคราะห์</button>
+      </div>
+      <div id="byAd-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-byAd"></div>
+    </section>
+
+    <section class="report" id="sec-adShare">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">5</span> สัดส่วนการขายแต่ละ Ad</div>
+        <div class="report-sub">เทียบสัดส่วนจากยอดขาย และสัดส่วนจากจำนวนออเดอร์ ของแต่ละช่องทาง</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="adShare">🤖 วิเคราะห์</button>
+      </div>
+      <div id="adShare-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-adShare"></div>
+    </section>
+
+    <section class="report" id="sec-timeSlots">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">6</span> ช่วงเวลาที่ขายดี</div>
+        <div class="report-sub">ยอดขาย/จำนวนออเดอร์ ตามชั่วโมง และตามวันในสัปดาห์ × ชั่วโมง</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="timeSlots">🤖 วิเคราะห์</button>
+      </div>
+      <div id="timeSlots-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-timeSlots"></div>
+    </section>
+
+    <section class="report" id="sec-itemGroups">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">7</span> สินค้าทุกรายการ (Keyword แยกรายรายการ)</div>
+        <div class="report-sub">ละเอียดกว่าข้อ 2 — ใช้ Keyword แยกตามท็อปปิ้ง/รสชาติ เพื่อรองรับการบันทึกข้อมูลที่ไม่เหมือนกัน</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="itemGroups">🤖 วิเคราะห์</button>
+      </div>
+      <div id="itemGroups-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-itemGroups"></div>
+    </section>
+
+    <section class="report" id="sec-targets">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">8</span> ยอดขายเทียบเป้าหมายรายเดือน <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div class="report-sub">เทียบยอดขายจริงกับเป้าหมายที่ตั้งไว้ในชีต Master Data Sales แยกตามช่องทางและรวม</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="targets">🤖 วิเคราะห์</button>
+      </div>
+      <div id="targets-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-targets"></div>
+    </section>
+
+    <section class="report" id="sec-customers">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">9</span> ลูกค้าใหม่ / ซื้อซ้ำ / ซื้อต่อเนื่อง <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div class="report-sub">รายเดือน: ลูกค้าใหม่, ลูกค้าที่ซื้อซ้ำในเดือนเดียวกัน, ลูกค้าที่ซื้อต่อเนื่องจากเดือนก่อนหน้า</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="customers">🤖 วิเคราะห์</button>
+      </div>
+      <div id="customers-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-customers"></div>
+    </section>
+
+    <section class="report" id="sec-signups">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">10</span> สมาชิกใหม่รายสัปดาห์ + การใช้โปรสมัคร</div>
+        <div class="report-sub">จำนวนคนสมัครสมาชิกใหม่แต่ละสัปดาห์ และจำนวนที่ใช้/มีสิทธิ์โปรต้อนรับสมาชิกใหม่</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="signups">🤖 วิเคราะห์</button>
+      </div>
+      <div id="signups-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-signups"></div>
+    </section>
+
+    <section class="report" id="sec-campaigns">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">11</span> โปรโมชั่น — ยอดขายและจำนวนออเดอร์</div>
+        <div class="report-sub">แยกตามคอลัมน์ "Campaign" ในชีต Revenue</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="campaigns">🤖 วิเคราะห์</button>
+      </div>
+      <div id="campaigns-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-campaigns"></div>
+    </section>
+
+    <section class="report" id="sec-aiAll">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">12</span> 🤖 AI สรุปและวิเคราะห์แนวโน้มภาพรวมทุกรายงาน</div>
+        <div class="report-sub">เชื่อมโยงข้อมูลจากทุกรายงานในช่วงวันที่ที่เลือก พร้อมแนวทางดำเนินการหลายทางเลือก</div></div>
+        <button class="btn btn-ai btn-sm" onclick="openOverallAI()">🤖 วิเคราะห์ภาพรวม</button>
+      </div>
+      <div id="aiAll-body"><div class="empty-note">กดปุ่ม "วิเคราะห์ภาพรวม" เพื่อให้ AI สรุปและวิเคราะห์ข้อมูลทั้งหมดในช่วงวันที่ที่เลือก</div></div>
+      <div class="ai-panel" id="ai-aiAll"></div>
+    </section>
+
+  </main>
+
+  <footer class="appfoot">Em-O-Cha Dashboard — ข้อมูลจาก Google Sheets ผ่าน Apps Script</footer>
+</div>
+
+<!-- ==================== Keyword group manager modal ==================== -->
+<div class="mo" id="keywordModal">
+  <div class="mo-card">
+    <div class="mo-hd">
+      <h2>🏷️ จัดการ Keyword สินค้า</h2>
+      <button class="mo-close" onclick="closeKeywordManager()">✕</button>
+    </div>
+    <div class="mo-bd">
+      <div class="kw-tabs">
+        <button class="kw-tab active" data-ctx="product" onclick="switchKeywordContext('product')">กลุ่มสินค้า (รายงาน 2 และ 3)</button>
+        <button class="kw-tab" data-ctx="item" onclick="switchKeywordContext('item')">กลุ่มรายการย่อย (รายงาน 7)</button>
+      </div>
+      <div class="info-note">พิมพ์ "คำ/ประโยคย่อย" ที่มักปรากฏอยู่ในชื่อสินค้าจริง (คั่นด้วยจุลภาค ,) — ถ้าชื่อสินค้าที่บันทึกไว้มีคำนั้นปรากฏอยู่ (ไม่สนตัวพิมพ์เล็กใหญ่) จะถูกนับเข้ากลุ่มนี้ทันที กดปุ่ม "ใช้เป็น Keyword" ทางขวาเพื่อหยิบชื่อสินค้าจริงมาใส่ในกลุ่มที่เลือกได้เลย</div>
+      <div class="kw-cols">
+        <div>
+          <div class="kw-col-title">กลุ่มที่ตั้งไว้</div>
+          <div id="kwGroupsList"></div>
+          <button class="btn btn-outline btn-sm" style="width:100%;margin-top:4px" onclick="addKeywordGroup()">+ เพิ่มกลุ่มใหม่</button>
+          <button class="btn btn-sm" style="width:100%;margin-top:10px" onclick="saveKeywordGroups()" id="kwSaveBtn">💾 บันทึกทั้งหมด</button>
+          <div class="empty-note" id="kwSaveStatus" style="padding:8px 0"></div>
+        </div>
+        <div>
+          <div class="kw-col-title">ชื่อสินค้าจริงที่บันทึกไว้ (ช่วงวันที่ที่เลือกอยู่)</div>
+          <input type="text" class="kw-search" id="kwSearch" placeholder="ค้นหาชื่อสินค้า..." oninput="renderKeywordRawList()">
+          <div class="kw-raw-list" id="kwRawList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Overall AI modal ==================== -->
+<div class="mo" id="overallAiModal">
+  <div class="mo-card" style="max-width:680px">
+    <div class="mo-hd">
+      <h2>🤖 AI สรุปภาพรวมทั้งหมด</h2>
+      <button class="mo-close" onclick="closeOverallAI()">✕</button>
+    </div>
+    <div class="mo-bd" id="overallAiBody">
+      <div class="empty-note">กำลังวิเคราะห์...</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
