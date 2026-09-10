@@ -315,8 +315,10 @@ function renderAdShare(list) {
     + '</div>';
   var colors = list.map(function (_, i) { return PALETTE_[i % PALETTE_.length]; });
   var legendOpt = { position: 'bottom', labels: { font: { family: 'Kanit' }, boxWidth: 12 } };
-  renderChart('adShareRevenueChart', { type: 'doughnut', data: { labels: list.map(function (it) { return it.ad; }), datasets: [{ data: list.map(function (it) { return it.revenue; }), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legendOpt } } });
-  renderChart('adShareOrdersChart', { type: 'doughnut', data: { labels: list.map(function (it) { return it.ad; }), datasets: [{ data: list.map(function (it) { return it.orders; }), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legendOpt } } });
+  var revenueLabels = list.map(function (it) { return it.ad + ' (' + it.revenueSharePct.toFixed(1) + '%)'; });
+  var orderLabels = list.map(function (it) { return it.ad + ' (' + it.orderSharePct.toFixed(1) + '%)'; });
+  renderChart('adShareRevenueChart', { type: 'doughnut', data: { labels: revenueLabels, datasets: [{ data: list.map(function (it) { return it.revenue; }), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legendOpt } } });
+  renderChart('adShareOrdersChart', { type: 'doughnut', data: { labels: orderLabels, datasets: [{ data: list.map(function (it) { return it.orders; }), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legendOpt } } });
 }
 
 // ==================== Report 6: Time slots ====================
@@ -327,6 +329,18 @@ function renderTimeSlots(ts) {
   var maxRevenue = Math.max.apply(null, ts.heatmap.map(function (c) { return c.revenue; }).concat([1]));
   var byDow = {};
   ts.heatmap.forEach(function (c) { if (!byDow[c.dow]) byDow[c.dow] = []; byDow[c.dow][c.hour] = c; });
+
+  var topSlots = ts.heatmap.filter(function (c) { return c.revenue > 0; })
+    .sort(function (a, b) { return b.revenue - a.revenue; }).slice(0, 3);
+  var medals = ['🥇', '🥈', '🥉'];
+  var topSlotsHtml = topSlots.length
+    ? '<div class="stat-grid">' + topSlots.map(function (c, i) {
+        return '<div class="stat-card"><div class="label">' + medals[i] + ' ' + escHtml(c.dowLabel) + ' เวลา ' + c.hour + ':00 น.</div>'
+          + '<div class="value" style="font-size:17px">' + fmtMoney(c.revenue) + '</div>'
+          + '<div class="delta" style="color:var(--g6)">' + fmtNum(c.orders) + ' ออเดอร์</div></div>';
+      }).join('') + '</div>'
+    : '';
+
   var hoursHeader = '<tr><td></td>' + Array.from({ length: 24 }, function (_, h) { return '<th>' + h + '</th>'; }).join('') + '</tr>';
   var rows = ts.dowLabels.map(function (label, dow) {
     var cells = (byDow[dow] || []).map(function (c) {
@@ -336,7 +350,8 @@ function renderTimeSlots(ts) {
     }).join('');
     return '<tr><td class="dowlabel">' + escHtml(label) + '</td>' + cells + '</tr>';
   }).join('');
-  body.innerHTML = '<div class="heatmap-wrap"><table class="heatmap">' + hoursHeader + rows + '</table></div>'
+  body.innerHTML = topSlotsHtml
+    + '<div class="heatmap-wrap"><table class="heatmap">' + hoursHeader + rows + '</table></div>'
     + '<p style="font-size:11px;color:var(--g6);margin-top:8px">สีเข้ม = ยอดขายสูง (เอาเมาส์ชี้ที่ช่องเพื่อดูตัวเลข) · แกนนอน = ชั่วโมง (0-23) · แกนตั้ง = วันในสัปดาห์</p>'
     + '<div class="chart-wrap" style="margin-top:16px"><canvas id="hourlyChart"></canvas></div>';
   renderChart('hourlyChart', {
