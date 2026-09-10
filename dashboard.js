@@ -5,7 +5,7 @@
  * (DashboardApi.gs) ที่ deploy แยกต่างหากไว้ใน Google Drive
  */
 var CONFIG = {
-  API_URL: 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE'
+  API_URL: 'https://script.google.com/macros/s/AKfycbxjQ2iLlExID0Yqry27F-IFGlBHYEbWN6DK4Y63pv5bZhqkLdlCn3ZuedvTglTRZQBvPQ/exec'
 };
 
 var STATE = { password: '', dateFrom: '', dateTo: '' };
