@@ -313,16 +313,42 @@ function renderByAd(list) {
 function renderAdShare(list) {
   var body = document.getElementById('adShare-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
-  body.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
-    + '<div><p style="text-align:center;font-size:12.5px;color:var(--g6);margin-bottom:6px">สัดส่วนจากยอดขาย</p><div class="chart-wrap"><canvas id="adShareRevenueChart"></canvas></div></div>'
-    + '<div><p style="text-align:center;font-size:12.5px;color:var(--g6);margin-bottom:6px">สัดส่วนจากจำนวนออเดอร์</p><div class="chart-wrap"><canvas id="adShareOrdersChart"></canvas></div></div>'
-    + '</div>';
-  var colors = list.map(function (_, i) { return PALETTE_[i % PALETTE_.length]; });
-  var legendOpt = { position: 'bottom', labels: { font: { family: 'Kanit' }, boxWidth: 12 } };
-  var revenueLabels = list.map(function (it) { return it.ad + ' (' + it.revenueSharePct.toFixed(1) + '%)'; });
-  var orderLabels = list.map(function (it) { return it.ad + ' (' + it.orderSharePct.toFixed(1) + '%)'; });
-  renderChart('adShareRevenueChart', { type: 'doughnut', data: { labels: revenueLabels, datasets: [{ data: list.map(function (it) { return it.revenue; }), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legendOpt } } });
-  renderChart('adShareOrdersChart', { type: 'doughnut', data: { labels: orderLabels, datasets: [{ data: list.map(function (it) { return it.orders; }), backgroundColor: colors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legendOpt } } });
+
+  // Keep each Ad's color consistent across both charts regardless of per-chart sort order.
+  var colorByAd = {};
+  list.forEach(function (it, i) { colorByAd[it.ad] = PALETTE_[i % PALETTE_.length]; });
+
+  function buildRow(title, sortKey, valueKey, pctKey, fmtValue) {
+    var sorted = list.slice().sort(function (a, b) { return b[sortKey] - a[sortKey]; });
+    var legendHtml = sorted.map(function (it) {
+      return '<div class="share-legend-row">'
+        + '<span class="share-dot" style="background:' + colorByAd[it.ad] + '"></span>'
+        + '<span class="share-name">' + escHtml(it.ad) + '</span>'
+        + '<span class="share-pct">' + Math.round(it[pctKey]) + '%</span>'
+        + '<span class="share-value">(' + fmtValue(it[valueKey]) + ')</span>'
+        + '</div>';
+    }).join('');
+    return '<div class="share-row">'
+      + '<p class="share-title">' + escHtml(title) + '</p>'
+      + '<div class="share-flex">'
+      + '<div class="chart-wrap share-chart"><canvas id="adShare_' + sortKey + '"></canvas></div>'
+      + '<div class="share-legend">' + legendHtml + '</div>'
+      + '</div></div>';
+  }
+
+  body.innerHTML = buildRow('ยอดขาย (บาท)', 'revenue', 'revenue', 'revenueSharePct', fmtMoney)
+    + buildRow('จำนวนรายการสั่งซื้อ', 'orders', 'orders', 'orderSharePct', function (n) { return fmtNum(n) + ' ออเดอร์'; });
+
+  function drawDoughnut(sortKey, valueKey) {
+    var sorted = list.slice().sort(function (a, b) { return b[sortKey] - a[sortKey]; });
+    renderChart('adShare_' + sortKey, {
+      type: 'doughnut',
+      data: { labels: sorted.map(function (it) { return it.ad; }), datasets: [{ data: sorted.map(function (it) { return it[valueKey]; }), backgroundColor: sorted.map(function (it) { return colorByAd[it.ad]; }) }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
+  drawDoughnut('revenue', 'revenue');
+  drawDoughnut('orders', 'orders');
 }
 
 // ==================== Report 6: Time slots ====================
