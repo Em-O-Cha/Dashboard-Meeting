@@ -151,6 +151,12 @@ table.data-table tbody tr:hover{background:#fafafa;}
 .kw-quickadd{background:var(--gp);color:var(--gd);border:none;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;white-space:nowrap;}
 .kw-search{width:100%;height:38px;border:1.5px solid #eee;border-radius:8px;padding:0 12px;font-size:13px;font-family:'Kanit',sans-serif;margin-bottom:10px;}
 
+.cd-section{margin-bottom:18px;}
+.cd-section-title{font-size:13px;font-weight:700;color:var(--gd);margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid var(--border);}
+.cd-customer{background:var(--gp);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.cd-customer-label{font-size:13px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.cd-order{font-size:11.5px;color:var(--g6);padding:2px 0;}
+
 footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 </style>
 </head>
@@ -376,6 +382,17 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
     <div class="mo-bd" id="overallAiBody">
       <div class="empty-note">กำลังวิเคราะห์...</div>
     </div>
+  </div>
+</div>
+
+<!-- ==================== Customer detail (raw data) modal ==================== -->
+<div class="mo" id="customerDetailModal">
+  <div class="mo-card" style="max-width:640px">
+    <div class="mo-hd">
+      <h2 id="customerDetailTitle">รายชื่อลูกค้า</h2>
+      <button class="mo-close" onclick="closeCustomerDetail()">✕</button>
+    </div>
+    <div class="mo-bd" id="customerDetailBody"></div>
   </div>
 </div>
 
