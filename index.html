@@ -98,6 +98,8 @@ table.data-table tbody tr:hover{background:#fafafa;}
 .tag-ungrouped{background:#fff3e0;color:#e65100;}
 .rank-medal{font-weight:700;color:var(--g6);}
 
+.heatmap-scroll-hint{display:none;font-size:11px;color:var(--g6);margin-bottom:6px;}
+@media (max-width:640px){.heatmap-scroll-hint{display:block;}}
 .heatmap-wrap{overflow-x:auto;}
 .heatmap{border-collapse:collapse;font-size:10.5px;}
 .heatmap th{font-weight:500;color:var(--g6);padding:2px 4px;text-align:center;}
@@ -134,6 +136,7 @@ table.data-table tbody tr:hover{background:#fafafa;}
 .kw-tab{padding:8px 16px;border-radius:20px;border:1.5px solid #ddd;font-size:13px;background:#fff;}
 .kw-tab.active{background:var(--gp);border-color:var(--gm);color:var(--gd);font-weight:600;}
 .kw-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.kw-cols>div{min-width:0;}
 @media (max-width:760px){.kw-cols{grid-template-columns:1fr;}}
 .kw-col-title{font-size:13px;font-weight:700;margin-bottom:10px;color:var(--g8);}
 .kw-group-row{border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px;}

@@ -381,6 +381,7 @@ function renderTimeSlots(ts) {
     return '<tr><td class="dowlabel">' + escHtml(label) + '</td>' + cells + '</tr>';
   }).join('');
   body.innerHTML = topSlotsHtml
+    + '<p class="heatmap-scroll-hint">← เลื่อนดูช่วงเวลาอื่น (ตารางกว้างกว่าจอมือถือ)</p>'
     + '<div class="heatmap-wrap"><table class="heatmap">' + hoursHeader + rows + '</table></div>'
     + '<p style="font-size:11px;color:var(--g6);margin-top:8px">สีเข้ม = ยอดขายสูง (เอาเมาส์ชี้ที่ช่องเพื่อดูตัวเลข) · แกนนอน = ชั่วโมง (0-23) · แกนตั้ง = วันในสัปดาห์</p>'
     + '<div class="chart-wrap" style="margin-top:16px"><canvas id="hourlyChart"></canvas></div>';
