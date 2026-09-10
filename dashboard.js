@@ -401,7 +401,7 @@ function renderCustomers(result) {
   body.innerHTML = (result.note ? '<div class="info-note">' + escHtml(result.note) + '</div>' : '')
     + '<div class="chart-wrap"><canvas id="customersChart"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>เดือน</th><th>ลูกค้า Active</th><th>ลูกค้าใหม่</th><th>ซื้อซ้ำในเดือนเดียวกัน</th><th>ซื้อต่อเนื่องจากเดือนก่อน</th><th>ออเดอร์รวม</th><th></th></tr></thead><tbody>'
-    + monthly.map(function (m) { return '<tr><td>' + escHtml(m.month) + '</td><td>' + fmtNum(m.totalActiveCustomers) + '</td><td>' + fmtNum(m.newCustomers) + '</td><td>' + fmtNum(m.repeatSameMonth) + '</td><td>' + fmtNum(m.continuingFromPrevMonth) + '</td><td>' + fmtNum(m.totalOrders) + '</td><td><button class="btn btn-outline btn-sm" onclick="openCustomerDetail(\'' + m.month + '\')">ดูรายชื่อ</button></td></tr>'; }).join('')
+    + monthly.map(function (m) { return '<tr><td>' + escHtml(m.month) + '</td><td>' + fmtNum(m.totalActiveCustomers) + '</td><td>' + fmtNum(m.newCustomers) + '</td><td>' + fmtNum(m.repeatSameMonth) + '</td><td>' + fmtNum(m.continuingFromPrevMonth) + '</td><td>' + fmtNum(m.totalOrders) + '</td><td><button class="btn btn-outline btn-sm" onclick="openCustomerDetail(\'' + m.month + '\')">ดูคนซื้อซ้ำ</button></td></tr>'; }).join('')
     + '</tbody></table></div>';
   renderChart('customersChart', {
     type: 'bar',
@@ -419,7 +419,7 @@ function renderCustomers(result) {
 
 function openCustomerDetail(month) {
   document.getElementById('customerDetailModal').classList.add('show');
-  document.getElementById('customerDetailTitle').textContent = 'รายชื่อลูกค้า — เดือน ' + month;
+  document.getElementById('customerDetailTitle').textContent = 'ลูกค้าที่ซื้อซ้ำในเดือนเดียวกัน — เดือน ' + month;
   var d = lastCustomerDetail[month] || { newCustomers: [], repeatSameMonth: [], continuingFromPrevMonth: [] };
   function buildSection(title, list) {
     if (!list.length) return '<div class="cd-section"><div class="cd-section-title">' + escHtml(title) + ' (0 คน)</div><div class="empty-note" style="padding:10px 0">ไม่มี</div></div>';
@@ -432,10 +432,7 @@ function openCustomerDetail(month) {
     }).join('');
     return '<div class="cd-section"><div class="cd-section-title">' + escHtml(title) + ' (' + list.length + ' คน)</div>' + rows + '</div>';
   }
-  document.getElementById('customerDetailBody').innerHTML =
-    buildSection('ลูกค้าใหม่', d.newCustomers)
-    + buildSection('ซื้อซ้ำในเดือนเดียวกัน', d.repeatSameMonth)
-    + buildSection('ซื้อต่อเนื่องจากเดือนก่อน', d.continuingFromPrevMonth);
+  document.getElementById('customerDetailBody').innerHTML = buildSection('ซื้อซ้ำในเดือนเดียวกัน', d.repeatSameMonth);
 }
 function closeCustomerDetail() { document.getElementById('customerDetailModal').classList.remove('show'); }
 
