@@ -54,7 +54,21 @@ function formatThaiDate_(iso) {
   var parts = iso.split('-');
   if (parts.length < 3) return iso;
   var y = +parts[0], m = +parts[1] - 1, d = +parts[2];
-  return d + ' ' + THAI_MONTHS_SHORT_[m] + ' ' + y;
+  return d + ' ' + THAI_MONTHS_SHORT_[m] + ' ' + (y + 543);
+}
+function addDays_(iso, n) {
+  var d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return toInputDate_(d);
+}
+function formatThaiDateRange_(fromIso, toIso) {
+  if (fromIso === toIso) return formatThaiDate_(fromIso);
+  var fParts = fromIso.split('-'), tParts = toIso.split('-');
+  var sameMonthYear = fParts[0] === tParts[0] && fParts[1] === tParts[1];
+  var fromLabel = sameMonthYear
+    ? (+fParts[2] + ' ' + THAI_MONTHS_SHORT_[+fParts[1] - 1])
+    : formatThaiDate_(fromIso);
+  return fromLabel + ' - ' + formatThaiDate_(toIso);
 }
 function isApiNotConfigured_() { return !CONFIG.API_URL || CONFIG.API_URL.indexOf('PASTE_YOUR') === 0; }
 
@@ -520,9 +534,19 @@ function renderSignups(data) {
     + (wp.note ? '<div class="info-note">' + escHtml(wp.note) + '</div>' : '')
     + (weeks.length ? '<div class="chart-wrap"><canvas id="signupsChart"></canvas></div>' : '<div class="empty-note">ไม่มีสมาชิกใหม่ในช่วงวันที่นี้</div>');
   if (weeks.length) {
+    // Label each bar with the actual date span of data it holds — the week's Mon-Sun
+    // range clipped to the selected date filter, not just the week's start date, so a
+    // filter narrower than a full week (e.g. 7-11 ก.ย.) reads as "7 ก.ย. - 11 ก.ย." not
+    // a bare "week of 7 ก.ย." that looks like it only covers a single day.
+    var weekLabels = weeks.map(function (w) {
+      var weekEnd = addDays_(w.weekStart, 6);
+      var rangeFrom = (STATE.dateFrom && STATE.dateFrom > w.weekStart) ? STATE.dateFrom : w.weekStart;
+      var rangeTo = (STATE.dateTo && STATE.dateTo < weekEnd) ? STATE.dateTo : weekEnd;
+      return formatThaiDateRange_(rangeFrom, rangeTo);
+    });
     renderChart('signupsChart', {
       type: 'bar',
-      data: { labels: weeks.map(function (w) { return 'สัปดาห์ของ ' + formatThaiDate_(w.weekStart); }), datasets: [{ label: 'สมาชิกใหม่', data: weeks.map(function (w) { return w.newMembers; }), backgroundColor: PALETTE_[3] }] },
+      data: { labels: weekLabels, datasets: [{ label: 'สมาชิกใหม่', data: weeks.map(function (w) { return w.newMembers; }), backgroundColor: PALETTE_[3] }] },
       options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'คน' } } }), { plugins: { legend: { display: false } } })
     });
   }
