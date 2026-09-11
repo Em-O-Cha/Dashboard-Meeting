@@ -356,9 +356,9 @@ function renderAdShare(list, productQtyByAd) {
     perAdProductRows.push({ ad: adEntry.ad, canvasId: 'adShare_pq_' + adx, rows: rows, colorByName: colorByName });
   });
   function buildProductQtyByAdRow_(entry) {
-    var legendHtml = entry.rows.map(function (r) {
+    var legendHtml = entry.rows.map(function (r, i) {
       return '<div class="share-legend-row">'
-        + '<span class="share-dot" style="background:' + entry.colorByName[r.name] + '"></span>'
+        + '<span class="share-rank" style="background:' + entry.colorByName[r.name] + '">' + (i + 1) + '</span>'
         + '<span class="share-name">' + escHtml(r.name) + '</span>'
         + '<span class="share-pct">' + Math.round(r.pct) + '%</span>'
         + '<span class="share-value">(' + fmtNum(r.qty) + ' ชิ้น)</span>'
