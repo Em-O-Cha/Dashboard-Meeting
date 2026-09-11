@@ -166,7 +166,7 @@ function loadAll() {
     renderProductGroups(r.productGroups);
     renderBestSellers(r.productGroups);
     renderByAd(r.byAd);
-    renderAdShare(r.byAd);
+    renderAdShare(r.byAd, r.productGroups);
     renderTimeSlots(r.timeSlots);
     renderItemGroups(r.itemGroups);
     renderCampaigns(r.campaigns);
@@ -310,11 +310,11 @@ function renderByAd(list) {
     options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'บาท' } } }), { plugins: { legend: { display: false } } })
   });
 }
-function renderAdShare(list) {
+function renderAdShare(list, productGroups) {
   var body = document.getElementById('adShare-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
 
-  // Keep each Ad's color consistent across both charts regardless of per-chart sort order.
+  // Keep each Ad's color consistent across all 3 by-Ad charts regardless of per-chart sort order.
   var colorByAd = {};
   list.forEach(function (it, i) { colorByAd[it.ad] = PALETTE_[i % PALETTE_.length]; });
 
@@ -336,8 +336,41 @@ function renderAdShare(list) {
       + '</div></div>';
   }
 
+  // Product quantity share (keyword-grouped, same grouping as reports 2/3/7): top 8 groups + "อื่นๆ" bucket.
+  var PRODUCT_QTY_TOP_N_ = 8;
+  var productRows = [];
+  var colorByProduct = {};
+  if (productGroups && productGroups.length) {
+    var totalQty = productGroups.reduce(function (s, g) { return s + (Number(g.qty) || 0); }, 0);
+    var sortedProducts = productGroups.slice().sort(function (a, b) { return b.qty - a.qty; });
+    var topProducts = sortedProducts.slice(0, PRODUCT_QTY_TOP_N_);
+    var restQty = sortedProducts.slice(PRODUCT_QTY_TOP_N_).reduce(function (s, g) { return s + (Number(g.qty) || 0); }, 0);
+    productRows = topProducts.map(function (g) { return { name: g.name, qty: g.qty, pct: totalQty ? (g.qty / totalQty * 100) : 0 }; });
+    if (restQty > 0) productRows.push({ name: 'อื่นๆ', qty: restQty, pct: totalQty ? (restQty / totalQty * 100) : 0 });
+    productRows.forEach(function (r, i) { colorByProduct[r.name] = PALETTE_[i % PALETTE_.length]; });
+  }
+  function buildProductQtyRow_() {
+    if (!productRows.length) return '';
+    var legendHtml = productRows.map(function (r) {
+      return '<div class="share-legend-row">'
+        + '<span class="share-dot" style="background:' + colorByProduct[r.name] + '"></span>'
+        + '<span class="share-name">' + escHtml(r.name) + '</span>'
+        + '<span class="share-pct">' + Math.round(r.pct) + '%</span>'
+        + '<span class="share-value">(' + fmtNum(r.qty) + ' ชิ้น)</span>'
+        + '</div>';
+    }).join('');
+    return '<div class="share-row">'
+      + '<p class="share-title">สัดส่วนจำนวนชิ้นของสินค้าแต่ละตัว (Top ' + PRODUCT_QTY_TOP_N_ + ' + อื่นๆ)</p>'
+      + '<div class="share-flex">'
+      + '<div class="chart-wrap share-chart"><canvas id="adShare_productQty"></canvas></div>'
+      + '<div class="share-legend">' + legendHtml + '</div>'
+      + '</div></div>';
+  }
+
   body.innerHTML = buildRow('ยอดขาย (บาท)', 'revenue', 'revenue', 'revenueSharePct', fmtMoney)
-    + buildRow('จำนวนรายการสั่งซื้อ', 'orders', 'orders', 'orderSharePct', function (n) { return fmtNum(n) + ' ออเดอร์'; });
+    + buildRow('จำนวนรายการสั่งซื้อ', 'orders', 'orders', 'orderSharePct', function (n) { return fmtNum(n) + ' ออเดอร์'; })
+    + buildRow('สัดส่วนจำนวนชิ้น', 'qty', 'qty', 'qtySharePct', function (n) { return fmtNum(n) + ' ชิ้น'; })
+    + buildProductQtyRow_();
 
   function drawDoughnut(sortKey, valueKey) {
     var sorted = list.slice().sort(function (a, b) { return b[sortKey] - a[sortKey]; });
@@ -349,6 +382,14 @@ function renderAdShare(list) {
   }
   drawDoughnut('revenue', 'revenue');
   drawDoughnut('orders', 'orders');
+  drawDoughnut('qty', 'qty');
+  if (productRows.length) {
+    renderChart('adShare_productQty', {
+      type: 'doughnut',
+      data: { labels: productRows.map(function (r) { return r.name; }), datasets: [{ data: productRows.map(function (r) { return r.qty; }), backgroundColor: productRows.map(function (r) { return colorByProduct[r.name]; }) }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+  }
 }
 
 // ==================== Report 6: Time slots ====================
