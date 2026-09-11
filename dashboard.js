@@ -32,9 +32,9 @@ var REPORT_TITLES = {
 };
 
 var NAV_SECTIONS = [
-  ['overview', '1. ยอดขายรวม'], ['productGroups', '2. สินค้าที่ขายได้'], ['bestSellers', '3. สินค้าขายดี'],
-  ['byAd', '4. ยอดขายแต่ละ Ad'], ['adShare', '5. สัดส่วนการขาย'], ['timeSlots', '6. ช่วงเวลาขายดี'],
-  ['targets', '7. เป้าหมาย'], ['customers', '8. ลูกค้าใหม่/ซื้อซ้ำ'],
+  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['productGroups', '3. สินค้าที่ขายได้'], ['bestSellers', '4. สินค้าขายดี'],
+  ['byAd', '5. ยอดขายแต่ละ Ad'], ['adShare', '6. สัดส่วนการขาย'], ['timeSlots', '7. ช่วงเวลาขายดี'],
+  ['customers', '8. ลูกค้าใหม่/ซื้อซ้ำ'],
   ['signups', '9. สมาชิกใหม่'], ['campaigns', '10. โปรโมชั่น'], ['aiAll', '11. AI ภาพรวม']
 ];
 
