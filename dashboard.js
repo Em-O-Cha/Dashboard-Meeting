@@ -282,7 +282,8 @@ function renderGroupTableWithChart_(sectionKey, list, chartId) {
     return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.name) + ' ' + (it.grouped ? '<span class="tag tag-grouped">จัดกลุ่มแล้ว</span>' : '<span class="tag tag-ungrouped">ยังไม่จัดกลุ่ม</span>') + '</td>'
       + '<td>' + fmtNum(it.qty) + '</td><td>' + fmtMoney(it.amount) + '</td><td>' + fmtNum(it.orderCount) + '</td></tr>';
   }).join('');
-  body.innerHTML = '<div class="chart-wrap"><canvas id="' + chartId + '"></canvas></div>'
+  body.innerHTML = '<p class="heatmap-scroll-hint">← เลื่อนดูชื่อสินค้าเต็มๆ (กราฟกว้างกว่าจอมือถือ)</p>'
+    + '<div class="chart-scroll"><div class="chart-wrap"><canvas id="' + chartId + '"></canvas></div></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>สินค้า/กลุ่ม</th><th>จำนวน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
   renderChart(chartId, {
     type: 'bar',
@@ -558,7 +559,8 @@ function renderSignups(data) {
 function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
-  body.innerHTML = '<div class="chart-wrap"><canvas id="campaignsChart"></canvas></div>'
+  body.innerHTML = '<p class="heatmap-scroll-hint">← เลื่อนดูชื่อแคมเปญเต็มๆ (กราฟกว้างกว่าจอมือถือ)</p>'
+    + '<div class="chart-scroll"><div class="chart-wrap"><canvas id="campaignsChart"></canvas></div></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>'
     + list.map(function (it) { return '<tr><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('')
     + '</tbody></table></div>';
