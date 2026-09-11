@@ -25,7 +25,6 @@ var REPORT_TITLES = {
   byAd: 'ยอดขายแต่ละ Ad',
   adShare: 'สัดส่วนการขายแต่ละ Ad',
   timeSlots: 'ช่วงเวลาที่ขายดี',
-  itemGroups: 'สินค้าทุกรายการ (Keyword แยกรายรายการ)',
   targets: 'ยอดขายเทียบเป้าหมายรายเดือน',
   customers: 'ลูกค้าใหม่/ซื้อซ้ำ/ซื้อต่อเนื่อง',
   signups: 'สมาชิกใหม่รายสัปดาห์',
@@ -35,8 +34,8 @@ var REPORT_TITLES = {
 var NAV_SECTIONS = [
   ['overview', '1. ยอดขายรวม'], ['productGroups', '2. สินค้าที่ขายได้'], ['bestSellers', '3. สินค้าขายดี'],
   ['byAd', '4. ยอดขายแต่ละ Ad'], ['adShare', '5. สัดส่วนการขาย'], ['timeSlots', '6. ช่วงเวลาขายดี'],
-  ['itemGroups', '7. สินค้าทุกรายการ'], ['targets', '8. เป้าหมาย'], ['customers', '9. ลูกค้าใหม่/ซื้อซ้ำ'],
-  ['signups', '10. สมาชิกใหม่'], ['campaigns', '11. โปรโมชั่น'], ['aiAll', '12. AI ภาพรวม']
+  ['targets', '7. เป้าหมาย'], ['customers', '8. ลูกค้าใหม่/ซื้อซ้ำ'],
+  ['signups', '9. สมาชิกใหม่'], ['campaigns', '10. โปรโมชั่น'], ['aiAll', '11. AI ภาพรวม']
 ];
 
 // ==================== Utils ====================
@@ -152,7 +151,7 @@ function buildNavTabs() {
 
 // ==================== Load & render all reports ====================
 
-var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'byAd', 'adShare', 'timeSlots', 'itemGroups', 'campaigns'];
+var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'byAd', 'adShare', 'timeSlots', 'campaigns'];
 
 function setSectionLoading_(keys) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="empty-note">กำลังโหลด...</div>'; }); }
 function showSectionError_(keys, msg) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="error-note">โหลดข้อมูลไม่สำเร็จ: ' + escHtml(msg || '') + '</div>'; }); }
@@ -168,7 +167,6 @@ function loadAll() {
     renderByAd(r.byAd);
     renderAdShare(r.byAd, r.productQtyByAd);
     renderTimeSlots(r.timeSlots);
-    renderItemGroups(r.itemGroups);
     renderCampaigns(r.campaigns);
   }).catch(function (e) { showSectionError_(DATE_DEPENDENT_KEYS_, e.message); });
 
@@ -259,10 +257,9 @@ function drawOverviewChart(ov) {
   });
 }
 
-// ==================== Report 2 & 7: Keyword-grouped products ====================
+// ==================== Report 2: Keyword-grouped products ====================
 
 function renderProductGroups(list) { renderGroupTableWithChart_('productGroups', list, 'productGroupsChart'); }
-function renderItemGroups(list) { renderGroupTableWithChart_('itemGroups', list, 'itemGroupsChart'); }
 function renderGroupTableWithChart_(sectionKey, list, chartId) {
   var body = document.getElementById(sectionKey + '-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
@@ -621,7 +618,6 @@ function getReportDataFor_(key) {
     case 'byAd': return lastDashboardData.byAd;
     case 'adShare': return lastDashboardData.byAd;
     case 'timeSlots': return lastDashboardData.timeSlots;
-    case 'itemGroups': return lastDashboardData.itemGroups;
     case 'campaigns': return lastDashboardData.campaigns;
   }
   return null;
@@ -653,7 +649,6 @@ function openOverallAI() {
     dateFrom: STATE.dateFrom, dateTo: STATE.dateTo,
     overview: lastDashboardData && lastDashboardData.overview,
     productGroups: lastDashboardData && (lastDashboardData.productGroups || []).slice(0, 20),
-    itemGroups: lastDashboardData && (lastDashboardData.itemGroups || []).slice(0, 20),
     byAd: lastDashboardData && lastDashboardData.byAd,
     timeSlots: lastDashboardData && lastDashboardData.timeSlots,
     campaigns: lastDashboardData && lastDashboardData.campaigns,
