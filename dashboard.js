@@ -292,16 +292,18 @@ function renderGroupTableWithChart_(sectionKey, list, chartId) {
   }).join('');
   body.innerHTML = '<div class="chart-wrap"><canvas id="' + chartId + '"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>สินค้า/กลุ่ม</th><th>จำนวน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
-  // The label truncation was never actually the bug — every "fix" attempt was being
-  // viewed through LINE's in-app browser, which was serving a stale cached copy the
-  // whole time. Now confirmed working correctly in a real, uncached browser, so show
-  // the actual (truncated) product name on the axis again instead of bare rank numbers.
+  // Confirmed with a fresh, cache-cleared Safari load: Thai text on the y-axis still
+  // gets cut to 2-3 characters on the user's real phone no matter how short it's
+  // truncated — that part was never a caching artifact. The "#1 #2 #3" rank-number
+  // version was the only thing that actually rendered correctly on that device, so
+  // that's what mobile gets; full name is one tap away via the tooltip and always
+  // visible in the table row with the same number. Desktop keeps the real name.
+  var isMobile_ = window.innerWidth <= 640;
   var fullNames_ = top.map(function (it) { return it.name; });
-  var barLabelLen_ = window.innerWidth <= 640 ? 10 : 20;
   renderChart(chartId, {
     type: 'bar',
     data: {
-      labels: top.map(function (it) { return truncateLabel_(it.name, barLabelLen_); }),
+      labels: top.map(function (it, i) { return isMobile_ ? ('#' + (i + 1)) : truncateLabel_(it.name, 20); }),
       datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }]
     },
     options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
@@ -582,12 +584,12 @@ function renderCampaigns(list) {
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>'
     + list.map(function (it, i) { return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('')
     + '</tbody></table></div>';
+  var isMobileC_ = window.innerWidth <= 640;
   var fullCampaignNames_ = list.map(function (it) { return it.campaign; });
-  var campaignLabelLen_ = window.innerWidth <= 640 ? 10 : 20;
   renderChart('campaignsChart', {
     type: 'bar',
     data: {
-      labels: list.map(function (it) { return truncateLabel_(it.campaign, campaignLabelLen_); }),
+      labels: list.map(function (it, i) { return isMobileC_ ? ('#' + (i + 1)) : truncateLabel_(it.campaign, 20); }),
       datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }]
     },
     options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
