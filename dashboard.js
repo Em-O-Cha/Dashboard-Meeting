@@ -503,7 +503,7 @@ function renderCustomers(result) {
 
 function openCustomerDetail(month) {
   document.getElementById('customerDetailModal').classList.add('show');
-  document.getElementById('customerDetailTitle').textContent = 'ลูกค้าที่ซื้อซ้ำในเดือนเดียวกัน — เดือน ' + month;
+  document.getElementById('customerDetailTitle').textContent = 'ลูกค้าที่ซื้อซ้ำ — เดือน ' + month;
   var d = lastCustomerDetail[month] || { newCustomers: [], repeatSameMonth: [], continuingFromPrevMonth: [] };
   function buildSection(title, list) {
     if (!list.length) return '<div class="cd-section"><div class="cd-section-title">' + escHtml(title) + ' (0 คน)</div><div class="empty-note" style="padding:10px 0">ไม่มี</div></div>';
@@ -516,7 +516,8 @@ function openCustomerDetail(month) {
     }).join('');
     return '<div class="cd-section"><div class="cd-section-title">' + escHtml(title) + ' (' + list.length + ' คน)</div>' + rows + '</div>';
   }
-  document.getElementById('customerDetailBody').innerHTML = buildSection('ซื้อซ้ำในเดือนเดียวกัน', d.repeatSameMonth);
+  document.getElementById('customerDetailBody').innerHTML = buildSection('ซื้อซ้ำในเดือนเดียวกัน', d.repeatSameMonth)
+    + buildSection('ซื้อต่อเนื่องจากเดือนก่อน', d.continuingFromPrevMonth);
 }
 function closeCustomerDetail() { document.getElementById('customerDetailModal').classList.remove('show'); }
 
