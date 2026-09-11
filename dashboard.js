@@ -166,7 +166,7 @@ function loadAll() {
     renderProductGroups(r.productGroups);
     renderBestSellers(r.productGroups);
     renderByAd(r.byAd);
-    renderAdShare(r.byAd, r.productGroups);
+    renderAdShare(r.byAd, r.productQtyByAd);
     renderTimeSlots(r.timeSlots);
     renderItemGroups(r.itemGroups);
     renderCampaigns(r.campaigns);
@@ -310,7 +310,7 @@ function renderByAd(list) {
     options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'บาท' } } }), { plugins: { legend: { display: false } } })
   });
 }
-function renderAdShare(list, productGroups) {
+function renderAdShare(list, productQtyByAd) {
   var body = document.getElementById('adShare-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
 
@@ -336,33 +336,38 @@ function renderAdShare(list, productGroups) {
       + '</div></div>';
   }
 
-  // Product quantity share (keyword-grouped, same grouping as reports 2/3/7): top 8 groups + "อื่นๆ" bucket.
+  // Product quantity mix WITHIN each Ad channel (keyword-grouped, same grouping as reports
+  // 2/3/7): one doughnut per Ad — e.g. "Shopee ขายสินค้าแต่ละตัวได้กี่ชิ้น" — top 8 + "อื่นๆ".
+  // % here is relative to that Ad's own total quantity, not the whole store's.
   var PRODUCT_QTY_TOP_N_ = 8;
-  var productRows = [];
-  var colorByProduct = {};
-  if (productGroups && productGroups.length) {
-    var totalQty = productGroups.reduce(function (s, g) { return s + (Number(g.qty) || 0); }, 0);
-    var sortedProducts = productGroups.slice().sort(function (a, b) { return b.qty - a.qty; });
-    var topProducts = sortedProducts.slice(0, PRODUCT_QTY_TOP_N_);
-    var restQty = sortedProducts.slice(PRODUCT_QTY_TOP_N_).reduce(function (s, g) { return s + (Number(g.qty) || 0); }, 0);
-    productRows = topProducts.map(function (g) { return { name: g.name, qty: g.qty, pct: totalQty ? (g.qty / totalQty * 100) : 0 }; });
-    if (restQty > 0) productRows.push({ name: 'อื่นๆ', qty: restQty, pct: totalQty ? (restQty / totalQty * 100) : 0 });
-    productRows.forEach(function (r, i) { colorByProduct[r.name] = PALETTE_[i % PALETTE_.length]; });
-  }
-  function buildProductQtyRow_() {
-    if (!productRows.length) return '';
-    var legendHtml = productRows.map(function (r) {
+  var adOrder = list.slice().sort(function (a, b) { return b.revenue - a.revenue; }).map(function (it) { return it.ad; });
+  var perAdProductRows = [];
+  (productQtyByAd || []).slice().sort(function (a, b) { return adOrder.indexOf(a.ad) - adOrder.indexOf(b.ad); }).forEach(function (adEntry, adx) {
+    var groups = adEntry.products || [];
+    if (!groups.length) return;
+    var totalQty = groups.reduce(function (s, g) { return s + (Number(g.qty) || 0); }, 0);
+    var sorted = groups.slice().sort(function (a, b) { return b.qty - a.qty; });
+    var top = sorted.slice(0, PRODUCT_QTY_TOP_N_);
+    var restQty = sorted.slice(PRODUCT_QTY_TOP_N_).reduce(function (s, g) { return s + (Number(g.qty) || 0); }, 0);
+    var rows = top.map(function (g) { return { name: g.name, qty: g.qty, pct: totalQty ? (g.qty / totalQty * 100) : 0 }; });
+    if (restQty > 0) rows.push({ name: 'อื่นๆ', qty: restQty, pct: totalQty ? (restQty / totalQty * 100) : 0 });
+    var colorByName = {};
+    rows.forEach(function (r, i) { colorByName[r.name] = PALETTE_[i % PALETTE_.length]; });
+    perAdProductRows.push({ ad: adEntry.ad, canvasId: 'adShare_pq_' + adx, rows: rows, colorByName: colorByName });
+  });
+  function buildProductQtyByAdRow_(entry) {
+    var legendHtml = entry.rows.map(function (r) {
       return '<div class="share-legend-row">'
-        + '<span class="share-dot" style="background:' + colorByProduct[r.name] + '"></span>'
+        + '<span class="share-dot" style="background:' + entry.colorByName[r.name] + '"></span>'
         + '<span class="share-name">' + escHtml(r.name) + '</span>'
         + '<span class="share-pct">' + Math.round(r.pct) + '%</span>'
         + '<span class="share-value">(' + fmtNum(r.qty) + ' ชิ้น)</span>'
         + '</div>';
     }).join('');
     return '<div class="share-row">'
-      + '<p class="share-title">สัดส่วนจำนวนชิ้นของสินค้าแต่ละตัว (Top ' + PRODUCT_QTY_TOP_N_ + ' + อื่นๆ)</p>'
+      + '<p class="share-title">สัดส่วนจำนวนชิ้นของสินค้าแต่ละตัว — ' + escHtml(entry.ad) + ' (Top ' + PRODUCT_QTY_TOP_N_ + ' + อื่นๆ)</p>'
       + '<div class="share-flex">'
-      + '<div class="chart-wrap share-chart"><canvas id="adShare_productQty"></canvas></div>'
+      + '<div class="chart-wrap share-chart"><canvas id="' + entry.canvasId + '"></canvas></div>'
       + '<div class="share-legend">' + legendHtml + '</div>'
       + '</div></div>';
   }
@@ -370,7 +375,7 @@ function renderAdShare(list, productGroups) {
   body.innerHTML = buildRow('ยอดขาย (บาท)', 'revenue', 'revenue', 'revenueSharePct', fmtMoney)
     + buildRow('จำนวนรายการสั่งซื้อ', 'orders', 'orders', 'orderSharePct', function (n) { return fmtNum(n) + ' ออเดอร์'; })
     + buildRow('สัดส่วนจำนวนชิ้น', 'qty', 'qty', 'qtySharePct', function (n) { return fmtNum(n) + ' ชิ้น'; })
-    + buildProductQtyRow_();
+    + perAdProductRows.map(buildProductQtyByAdRow_).join('');
 
   function drawDoughnut(sortKey, valueKey) {
     var sorted = list.slice().sort(function (a, b) { return b[sortKey] - a[sortKey]; });
@@ -383,13 +388,13 @@ function renderAdShare(list, productGroups) {
   drawDoughnut('revenue', 'revenue');
   drawDoughnut('orders', 'orders');
   drawDoughnut('qty', 'qty');
-  if (productRows.length) {
-    renderChart('adShare_productQty', {
+  perAdProductRows.forEach(function (entry) {
+    renderChart(entry.canvasId, {
       type: 'doughnut',
-      data: { labels: productRows.map(function (r) { return r.name; }), datasets: [{ data: productRows.map(function (r) { return r.qty; }), backgroundColor: productRows.map(function (r) { return colorByProduct[r.name]; }) }] },
+      data: { labels: entry.rows.map(function (r) { return r.name; }), datasets: [{ data: entry.rows.map(function (r) { return r.qty; }), backgroundColor: entry.rows.map(function (r) { return entry.colorByName[r.name]; }) }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
-  }
+  });
 }
 
 // ==================== Report 6: Time slots ====================
