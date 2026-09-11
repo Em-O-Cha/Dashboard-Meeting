@@ -284,18 +284,22 @@ function renderGroupTableWithChart_(sectionKey, list, chartId) {
   }).join('');
   body.innerHTML = '<div class="chart-wrap"><canvas id="' + chartId + '"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>สินค้า/กลุ่ม</th><th>จำนวน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
-  // Chart.js's own y-axis width allocation for a horizontal bar chart's category labels
-  // turned out to be unreliable to widen from outside (two earlier attempts — a
-  // scrollable min-width container, then a fixed non-responsive canvas size — both
-  // still left labels severely truncated on a real phone despite passing local
-  // testing). Truncating the label text itself is the one thing guaranteed to render
-  // the same everywhere: short enough on mobile to always fit, full name on tap/hover
-  // via the tooltip and always visible in full in the table below.
+  // Thai text in the y-axis of a horizontal bar chart kept getting cut down to 2-3
+  // characters on a real phone no matter how it was truncated or how much width the
+  // canvas was given (three different approaches all failed — width and text-length
+  // are apparently not the actual constraint on that device/font-rendering path).
+  // Sidestep the whole problem on mobile: use plain "#1 #2 #3..." for the axis (always
+  // fits, no font-width guesswork) matching the "#" column already in the table below,
+  // full name still on tap via the tooltip. Desktop, which was never broken, keeps the
+  // real (truncated) product name on the axis as before.
+  var isMobile_ = window.innerWidth <= 640;
   var fullNames_ = top.map(function (it) { return it.name; });
-  var barLabelLen_ = window.innerWidth <= 640 ? 10 : 20;
   renderChart(chartId, {
     type: 'bar',
-    data: { labels: top.map(function (it) { return truncateLabel_(it.name, barLabelLen_); }), datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }] },
+    data: {
+      labels: top.map(function (it, i) { return isMobile_ ? ('#' + (i + 1)) : truncateLabel_(it.name, 20); }),
+      datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }]
+    },
     options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
       indexAxis: 'y',
       plugins: { legend: { display: false }, tooltip: { callbacks: { title: function (items) { return fullNames_[items[0].dataIndex]; } } } }
@@ -571,14 +575,17 @@ function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
   body.innerHTML = '<div class="chart-wrap"><canvas id="campaignsChart"></canvas></div>'
-    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>'
-    + list.map(function (it) { return '<tr><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('')
+    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>'
+    + list.map(function (it, i) { return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('')
     + '</tbody></table></div>';
+  var isMobileC_ = window.innerWidth <= 640;
   var fullCampaignNames_ = list.map(function (it) { return it.campaign; });
-  var campaignLabelLen_ = window.innerWidth <= 640 ? 10 : 20;
   renderChart('campaignsChart', {
     type: 'bar',
-    data: { labels: list.map(function (it) { return truncateLabel_(it.campaign, campaignLabelLen_); }), datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }] },
+    data: {
+      labels: list.map(function (it, i) { return isMobileC_ ? ('#' + (i + 1)) : truncateLabel_(it.campaign, 20); }),
+      datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }]
+    },
     options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
       indexAxis: 'y',
       plugins: { legend: { display: false }, tooltip: { callbacks: { title: function (items) { return fullCampaignNames_[items[0].dataIndex]; } } } }
