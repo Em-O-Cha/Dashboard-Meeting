@@ -522,9 +522,45 @@ function buildAiHtml_(analysis) {
   }
   return h;
 }
-function renderAiPanel(panelId, analysis) {
+function formatSavedAt_(ts) {
+  var d = new Date(ts);
+  return formatThaiDate_(toInputDate_(d)) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' น.';
+}
+function aiStorageKey_(key) { return 'emocha.ai.' + key; }
+function saveAiResult_(key, analysis, direction) {
+  try { localStorage.setItem(aiStorageKey_(key), JSON.stringify({ analysis: analysis, direction: direction || '', savedAt: Date.now() })); } catch (e) {}
+}
+function restoreAiPanels_() {
+  Object.keys(REPORT_TITLES).forEach(function (key) {
+    var raw; try { raw = localStorage.getItem(aiStorageKey_(key)); } catch (e) { raw = null; }
+    if (!raw) return;
+    try {
+      var saved = JSON.parse(raw);
+      if (saved && saved.analysis) {
+        renderAiPanel('ai-' + key, saved.analysis, saved.savedAt);
+        var dirEl = document.getElementById('ai-dir-' + key);
+        if (dirEl && saved.direction) dirEl.value = saved.direction;
+      }
+    } catch (e) {}
+  });
+  var rawAll; try { rawAll = localStorage.getItem(aiStorageKey_('aiAll')); } catch (e) { rawAll = null; }
+  if (!rawAll) return;
+  try {
+    var savedAll = JSON.parse(rawAll);
+    if (savedAll && savedAll.analysis) {
+      var note = '<div class="ai-saved-note">🕓 บันทึกไว้เมื่อ ' + escHtml(formatSavedAt_(savedAll.savedAt)) + ' — จะแสดงค้างไว้จนกว่าจะกดวิเคราะห์ใหม่</div>';
+      var html = note + buildAiHtml_(savedAll.analysis);
+      document.getElementById('ai-aiAll').innerHTML = html;
+      document.getElementById('ai-aiAll').classList.add('show');
+      var dirAllEl = document.getElementById('ai-dir-aiAll');
+      if (dirAllEl && savedAll.direction) dirAllEl.value = savedAll.direction;
+    }
+  } catch (e) {}
+}
+function renderAiPanel(panelId, analysis, savedAt) {
   var el = document.getElementById(panelId);
-  el.innerHTML = '<div class="ai-panel-hd">🤖 ผลวิเคราะห์จาก AI</div>' + buildAiHtml_(analysis);
+  var note = savedAt ? '<div class="ai-saved-note">🕓 บันทึกไว้เมื่อ ' + escHtml(formatSavedAt_(savedAt)) + ' — จะแสดงค้างไว้จนกว่าจะกดวิเคราะห์ใหม่</div>' : '';
+  el.innerHTML = '<div class="ai-panel-hd">🤖 ผลวิเคราะห์จาก AI</div>' + note + buildAiHtml_(analysis);
   el.classList.add('show');
 }
 function getReportDataFor_(key) {
@@ -547,14 +583,16 @@ function getReportDataFor_(key) {
 function runAiAnalyze(key, btnEl) {
   var data = getReportDataFor_(key);
   if (!data) { alert('ยังไม่มีข้อมูลรายงานนี้ กรุณารอโหลดข้อมูลให้เสร็จก่อน'); return; }
+  var dirEl = document.getElementById('ai-dir-' + key);
+  var direction = dirEl ? dirEl.value.trim() : '';
   var panel = document.getElementById('ai-' + key);
   panel.classList.add('show');
   panel.innerHTML = '<div class="ai-loading">🤖 กำลังวิเคราะห์ด้วย AI...</div>';
   btnEl.disabled = true;
-  apiPost('aiAnalyze', { reportKey: key, reportTitle: REPORT_TITLES[key] || key, reportData: JSON.stringify(data), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo })
+  apiPost('aiAnalyze', { reportKey: key, reportTitle: REPORT_TITLES[key] || key, reportData: JSON.stringify(data), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo, direction: direction })
     .then(function (r) {
       btnEl.disabled = false;
-      if (r && r.success) renderAiPanel('ai-' + key, r.analysis);
+      if (r && r.success) { renderAiPanel('ai-' + key, r.analysis); saveAiResult_(key, r.analysis, direction); }
       else panel.innerHTML = '<div class="error-note">วิเคราะห์ไม่สำเร็จ: ' + escHtml(r ? r.error : '') + '</div>';
     })
     .catch(function (e) { btnEl.disabled = false; panel.innerHTML = '<div class="error-note">เรียก AI ไม่สำเร็จ: ' + escHtml(e.message) + '</div>'; });
@@ -563,6 +601,8 @@ function openOverallAI() {
   document.getElementById('overallAiModal').classList.add('show');
   var modalBody = document.getElementById('overallAiBody');
   modalBody.innerHTML = '<div class="ai-loading">🤖 กำลังวิเคราะห์ข้อมูลทั้งหมด... อาจใช้เวลาสักครู่</div>';
+  var dirEl = document.getElementById('ai-dir-aiAll');
+  var direction = dirEl ? dirEl.value.trim() : '';
   var bundle = {
     dateFrom: STATE.dateFrom, dateTo: STATE.dateTo,
     overview: lastDashboardData && lastDashboardData.overview,
@@ -575,13 +615,14 @@ function openOverallAI() {
     customers: lastCustomersData,
     signups: lastSignupsData
   };
-  apiPost('aiAnalyzeAll', { bundle: JSON.stringify(bundle), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo })
+  apiPost('aiAnalyzeAll', { bundle: JSON.stringify(bundle), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo, direction: direction })
     .then(function (r) {
       var html = (r && r.success) ? buildAiHtml_(r.analysis) : '<div class="error-note">วิเคราะห์ไม่สำเร็จ: ' + escHtml(r ? r.error : '') + '</div>';
       modalBody.innerHTML = html;
       document.getElementById('ai-aiAll').innerHTML = html;
       document.getElementById('ai-aiAll').classList.add('show');
       document.getElementById('aiAll-body').innerHTML = '';
+      if (r && r.success) saveAiResult_('aiAll', r.analysis, direction);
     })
     .catch(function (e) {
       var html = '<div class="error-note">เรียก AI ไม่สำเร็จ: ' + escHtml(e.message) + '</div>';
@@ -689,7 +730,21 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   document.getElementById('loginPassword').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleLogin(); });
   document.querySelectorAll('.preset-btn[data-preset]').forEach(function (btn) { btn.addEventListener('click', function () { setPreset(btn.getAttribute('data-preset')); }); });
-  document.querySelectorAll('.ai-btn').forEach(function (btn) { btn.addEventListener('click', function () { runAiAnalyze(btn.getAttribute('data-report'), btn); }); });
+  document.querySelectorAll('.ai-btn').forEach(function (btn) {
+    var key = btn.getAttribute('data-report');
+    var group = document.createElement('div');
+    group.className = 'ai-btn-group';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'ai-direction-input';
+    input.id = 'ai-dir-' + key;
+    input.placeholder = 'บอกทิศทางที่ต้องการให้ AI เน้น (ไม่ใส่ก็ได้)';
+    btn.parentNode.insertBefore(group, btn);
+    group.appendChild(input);
+    group.appendChild(btn);
+    btn.addEventListener('click', function () { runAiAnalyze(key, btn); });
+  });
+  restoreAiPanels_();
 
   var savedPw = null;
   try { savedPw = sessionStorage.getItem('emocha.dashboard.password'); } catch (e) {}
