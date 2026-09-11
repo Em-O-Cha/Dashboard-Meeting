@@ -282,21 +282,24 @@ function renderGroupTableWithChart_(sectionKey, list, chartId) {
     return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.name) + ' ' + (it.grouped ? '<span class="tag tag-grouped">จัดกลุ่มแล้ว</span>' : '<span class="tag tag-ungrouped">ยังไม่จัดกลุ่ม</span>') + '</td>'
       + '<td>' + fmtNum(it.qty) + '</td><td>' + fmtMoney(it.amount) + '</td><td>' + fmtNum(it.orderCount) + '</td></tr>';
   }).join('');
-  // Mobile: give the canvas a fixed pixel size (via HTML attributes) and responsive:false
-  // instead of letting Chart.js auto-size it off the container (responsive:true / ResizeObserver).
-  // The auto-sizing path was unreliable inside a newly-inserted horizontally-scrollable
-  // container — it could settle on the pre-scroll viewport width and leave the y-axis
-  // labels severely truncated. A fixed size sidesteps that entirely. Desktop keeps the
-  // original responsive fill-the-card behavior, which never had this problem.
-  var isMobile_ = window.innerWidth <= 640;
-  var canvasTag_ = isMobile_ ? ('<canvas id="' + chartId + '" width="560" height="260"></canvas>') : ('<canvas id="' + chartId + '"></canvas>');
-  body.innerHTML = '<p class="heatmap-scroll-hint">← เลื่อนดูชื่อสินค้าเต็มๆ (กราฟกว้างกว่าจอมือถือ)</p>'
-    + '<div class="chart-scroll"><div class="chart-wrap">' + canvasTag_ + '</div></div>'
+  body.innerHTML = '<div class="chart-wrap"><canvas id="' + chartId + '"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>สินค้า/กลุ่ม</th><th>จำนวน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+  // Chart.js's own y-axis width allocation for a horizontal bar chart's category labels
+  // turned out to be unreliable to widen from outside (two earlier attempts — a
+  // scrollable min-width container, then a fixed non-responsive canvas size — both
+  // still left labels severely truncated on a real phone despite passing local
+  // testing). Truncating the label text itself is the one thing guaranteed to render
+  // the same everywhere: short enough on mobile to always fit, full name on tap/hover
+  // via the tooltip and always visible in full in the table below.
+  var fullNames_ = top.map(function (it) { return it.name; });
+  var barLabelLen_ = window.innerWidth <= 640 ? 10 : 20;
   renderChart(chartId, {
     type: 'bar',
-    data: { labels: top.map(function (it) { return truncateLabel_(it.name, 18); }), datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }] },
-    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), { indexAxis: 'y', responsive: !isMobile_, plugins: { legend: { display: false } } })
+    data: { labels: top.map(function (it) { return truncateLabel_(it.name, barLabelLen_); }), datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }] },
+    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
+      indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: function (items) { return fullNames_[items[0].dataIndex]; } } } }
+    })
   });
 }
 
@@ -567,17 +570,19 @@ function renderSignups(data) {
 function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
-  var isMobileC_ = window.innerWidth <= 640;
-  var canvasTagC_ = isMobileC_ ? '<canvas id="campaignsChart" width="560" height="260"></canvas>' : '<canvas id="campaignsChart"></canvas>';
-  body.innerHTML = '<p class="heatmap-scroll-hint">← เลื่อนดูชื่อแคมเปญเต็มๆ (กราฟกว้างกว่าจอมือถือ)</p>'
-    + '<div class="chart-scroll"><div class="chart-wrap">' + canvasTagC_ + '</div></div>'
+  body.innerHTML = '<div class="chart-wrap"><canvas id="campaignsChart"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>'
     + list.map(function (it) { return '<tr><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('')
     + '</tbody></table></div>';
+  var fullCampaignNames_ = list.map(function (it) { return it.campaign; });
+  var campaignLabelLen_ = window.innerWidth <= 640 ? 10 : 20;
   renderChart('campaignsChart', {
     type: 'bar',
-    data: { labels: list.map(function (it) { return truncateLabel_(it.campaign, 20); }), datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }] },
-    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), { indexAxis: 'y', responsive: !isMobileC_, plugins: { legend: { display: false } } })
+    data: { labels: list.map(function (it) { return truncateLabel_(it.campaign, campaignLabelLen_); }), datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }] },
+    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
+      indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: function (items) { return fullCampaignNames_[items[0].dataIndex]; } } } }
+    })
   });
 }
 
