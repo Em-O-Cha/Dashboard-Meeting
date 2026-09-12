@@ -691,6 +691,13 @@ function renderCampaigns(list) {
 // ==================== Report 12: AI analysis ====================
 
 function buildAiHtml_(analysis) {
+  var looksRaw = (!analysis.insights || !analysis.insights.length) && (!analysis.risks || !analysis.risks.length)
+    && (!analysis.recommendations || !analysis.recommendations.length)
+    && analysis.summary && /^\s*(```|\{)/.test(analysis.summary);
+  if (looksRaw) {
+    return '<div class="error-note">AI ตอบกลับมาไม่ตรงรูปแบบที่กำหนด เลยแสดงข้อความดิบแทน ลองกด "วิเคราะห์" ใหม่อีกครั้ง</div>'
+      + '<pre class="ai-raw">' + escHtml(analysis.summary) + '</pre>';
+  }
   var h = '<div class="ai-summary">' + escHtml(analysis.summary || '') + '</div>';
   if (analysis.insights && analysis.insights.length) {
     h += '<div class="ai-block-title">🔍 ข้อสังเกต/แนวโน้ม</div><ul class="ai-list">' + analysis.insights.map(function (x) { return '<li>' + escHtml(x) + '</li>'; }).join('') + '</ul>';
