@@ -10,6 +10,7 @@ var CONFIG = {
 
 var STATE = { password: '', dateFrom: '', dateTo: '' };
 var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null;
+var isLoadingAll = false;
 var lastCustomerDetail = {};
 var overviewGranularity = 'daily';
 var kwState = { context: 'product', groups: [], rawList: [] };
@@ -172,6 +173,7 @@ function setSectionLoading_(keys) { keys.forEach(function (k) { var el = documen
 function showSectionError_(keys, msg) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="error-note">โหลดข้อมูลไม่สำเร็จ: ' + escHtml(msg || '') + '</div>'; }); }
 
 function loadAll() {
+  isLoadingAll = true;
   setSectionLoading_(DATE_DEPENDENT_KEYS_);
   setSectionLoading_(['targets']);
   setSectionLoading_(['customers']);
@@ -216,7 +218,8 @@ function loadAll() {
         if (!r || !r.success) { showSectionError_(['membersGen'], r ? r.error : ''); return; }
         lastMembersGenData = r; renderMembersGen(r);
       }).catch(function (e) { showSectionError_(['membersGen'], e.message); });
-    });
+    })
+    .then(function () { isLoadingAll = false; });
 }
 
 // ==================== Chart helpers ====================
@@ -794,6 +797,10 @@ function runAiAnalyze(key, btnEl) {
 function openOverallAI() {
   document.getElementById('overallAiModal').classList.add('show');
   var modalBody = document.getElementById('overallAiBody');
+  if (isLoadingAll || !lastDashboardData || !lastTargetsData || !lastCustomersData || !lastSignupsData || !lastMembersGenData) {
+    modalBody.innerHTML = '<div class="error-note">ข้อมูลบางรายงานยังโหลดไม่เสร็จ (รายงานจะโหลดเรียงกันทีละหัวข้อ) กรุณารอสักครู่จนทุกรายงานขึ้นข้อมูลครบ แล้วกด "วิเคราะห์ภาพรวม" ใหม่อีกครั้ง — ไม่งั้น AI จะไม่เห็นข้อมูลของรายงานที่ยังโหลดไม่เสร็จ</div>';
+    return;
+  }
   modalBody.innerHTML = '<div class="ai-loading">🤖 กำลังวิเคราะห์ข้อมูลทั้งหมด... อาจใช้เวลาสักครู่</div>';
   var dirEl = document.getElementById('ai-dir-aiAll');
   var direction = dirEl ? dirEl.value.trim() : '';
