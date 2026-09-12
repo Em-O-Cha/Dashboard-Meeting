@@ -9,7 +9,7 @@ var CONFIG = {
 };
 
 var STATE = { password: '', dateFrom: '', dateTo: '' };
-var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null;
+var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null;
 var lastCustomerDetail = {};
 var overviewGranularity = 'daily';
 var kwState = { context: 'product', groups: [], rawList: [] };
@@ -28,6 +28,7 @@ var REPORT_TITLES = {
   targets: 'ยอดขายเทียบเป้าหมายรายเดือน',
   customers: 'ลูกค้าใหม่/ซื้อซ้ำ/ซื้อต่อเนื่อง',
   signups: 'สมาชิกใหม่รายสัปดาห์',
+  membersGen: 'สมาชิก LINE แบ่งตาม Gen',
   campaigns: 'โปรโมชั่น'
 };
 
@@ -35,7 +36,7 @@ var NAV_SECTIONS = [
   ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['productGroups', '3. สินค้าที่ขายได้'], ['bestSellers', '4. สินค้าขายดี'],
   ['byAd', '5. ยอดขายแต่ละ Ad'], ['adShare', '6. สัดส่วนการขาย'], ['timeSlots', '7. ช่วงเวลาขายดี'],
   ['customers', '8. ลูกค้าใหม่/ซื้อซ้ำ'],
-  ['signups', '9. สมาชิกใหม่'], ['campaigns', '10. โปรโมชั่น'], ['aiAll', '11. AI ภาพรวม']
+  ['signups', '9. สมาชิกใหม่'], ['membersGen', '10. Gen สมาชิก'], ['campaigns', '11. โปรโมชั่น'], ['aiAll', '12. AI ภาพรวม']
 ];
 
 // ==================== Utils ====================
@@ -175,6 +176,7 @@ function loadAll() {
   setSectionLoading_(['targets']);
   setSectionLoading_(['customers']);
   setSectionLoading_(['signups']);
+  setSectionLoading_(['membersGen']);
 
   // Fire these one at a time, not all at once — Google Apps Script Web Apps can reject
   // or return a non-JSON (HTML) error page for some requests when several hit the same
@@ -208,6 +210,12 @@ function loadAll() {
         if (!r || !r.success) { showSectionError_(['signups'], r ? r.error : ''); return; }
         lastSignupsData = r; renderSignups(r);
       }).catch(function (e) { showSectionError_(['signups'], e.message); });
+    })
+    .then(function () {
+      return apiGet('getMembersByGen', {}).then(function (r) {
+        if (!r || !r.success) { showSectionError_(['membersGen'], r ? r.error : ''); return; }
+        lastMembersGenData = r; renderMembersGen(r);
+      }).catch(function (e) { showSectionError_(['membersGen'], e.message); });
     });
 }
 
@@ -583,6 +591,36 @@ function renderSignups(data) {
   }
 }
 
+// ==================== Report 10: Members by generation ====================
+
+function renderMembersGen(data) {
+  var body = document.getElementById('membersGen-body');
+  var gens = (data && data.gens) || [];
+  if (!gens.length) { body.innerHTML = '<div class="empty-note">' + escHtml((data && data.note) || 'ไม่มีข้อมูล Gen ของสมาชิก') + '</div>'; return; }
+  var noteHtml = (data.noBirthdateCount > 0)
+    ? '<div class="info-note">มีสมาชิก ' + fmtNum(data.noBirthdateCount) + ' คน (จากทั้งหมด ' + fmtNum(data.totalMembers) + ' คน) ที่ไม่มีข้อมูลวันเกิดในชีต เลยไม่ถูกจัดกลุ่ม Gen — ตัวเลขด้านล่างนับเฉพาะคนที่มีวันเกิดเท่านั้น</div>'
+    : '';
+  body.innerHTML = noteHtml
+    + '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
+    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนคน</th><th>ยอดซื้อสะสมรวม</th></tr></thead><tbody>'
+    + gens.map(function (g) { return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td>' + fmtNum(g.count) + '</td><td>' + fmtMoney(g.totalSpend) + '</td></tr>'; }).join('')
+    + '</tbody></table></div>';
+  renderChart('membersGenChart', {
+    type: 'bar',
+    data: {
+      labels: gens.map(function (g) { return g.label; }),
+      datasets: [
+        { label: 'ยอดซื้อสะสม (บาท)', data: gens.map(function (g) { return g.totalSpend; }), backgroundColor: PALETTE_[0], yAxisID: 'y' },
+        { label: 'จำนวนคน', data: gens.map(function (g) { return g.count; }), backgroundColor: PALETTE_[2], yAxisID: 'y1' }
+      ]
+    },
+    options: baseChartOptions_({
+      y: { position: 'left', title: { display: true, text: 'บาท' } },
+      y1: { position: 'right', title: { display: true, text: 'คน' }, grid: { drawOnChartArea: false } }
+    })
+  });
+}
+
 // ==================== Report 11: Campaigns ====================
 
 function renderCampaigns(list) {
@@ -678,6 +716,7 @@ function getReportDataFor_(key) {
   if (key === 'targets') return lastTargetsData;
   if (key === 'customers') return lastCustomersData;
   if (key === 'signups') return lastSignupsData;
+  if (key === 'membersGen') return lastMembersGenData;
   if (!lastDashboardData) return null;
   switch (key) {
     case 'overview': return lastDashboardData.overview;
@@ -722,7 +761,8 @@ function openOverallAI() {
     campaigns: lastDashboardData && lastDashboardData.campaigns,
     targets: lastTargetsData,
     customers: lastCustomersData,
-    signups: lastSignupsData
+    signups: lastSignupsData,
+    membersGen: lastMembersGenData
   };
   apiPost('aiAnalyzeAll', { bundle: JSON.stringify(bundle), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo, direction: direction })
     .then(function (r) {
