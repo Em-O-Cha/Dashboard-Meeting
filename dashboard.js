@@ -235,6 +235,42 @@ function baseChartOptions_(scalesExtra) {
     scales: Object.assign({ x: { ticks: { font: { family: 'Kanit' } } } }, scalesExtra || {})
   };
 }
+// A small inline Chart.js plugin (no external datalabels library needed) that writes
+// each bar's own value next to/above it, for charts where "how many exactly" matters
+// more than reading it off the axis. Pass the dataset indexes to label so charts with
+// multiple series (e.g. money + headcount) can label only the one that needs it.
+function valueLabelPlugin_(datasetIndexes, formatFn) {
+  return {
+    id: 'valueLabels',
+    afterDatasetsDraw: function (chart) {
+      var ctx = chart.ctx;
+      var isHorizontal = chart.options.indexAxis === 'y';
+      datasetIndexes.forEach(function (di) {
+        var meta = chart.getDatasetMeta(di);
+        if (!meta || meta.hidden) return;
+        var dataset = chart.data.datasets[di];
+        meta.data.forEach(function (el, i) {
+          var value = dataset.data[i];
+          if (value === null || value === undefined) return;
+          var label = formatFn ? formatFn(value) : String(value);
+          ctx.save();
+          ctx.font = "600 11px 'Kanit', sans-serif";
+          ctx.fillStyle = '#302121';
+          if (isHorizontal) {
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, el.x + 6, el.y);
+          } else {
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(label, el.x, el.y - 4);
+          }
+          ctx.restore();
+        });
+      });
+    }
+  };
+}
 
 // ==================== Report 1: Overview ====================
 
@@ -586,7 +622,8 @@ function renderSignups(data) {
     renderChart('signupsChart', {
       type: 'bar',
       data: { labels: weekLabels, datasets: [{ label: 'สมาชิกใหม่', data: weeks.map(function (w) { return w.newMembers; }), backgroundColor: PALETTE_[3] }] },
-      options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'คน' } } }), { plugins: { legend: { display: false } } })
+      options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'คน' } } }), { plugins: { legend: { display: false } } }),
+      plugins: [valueLabelPlugin_([0], function (v) { return fmtNum(v); })]
     });
   }
 }
@@ -602,8 +639,8 @@ function renderMembersGen(data) {
     : '';
   body.innerHTML = noteHtml
     + '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
-    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนคน</th><th>ยอดซื้อสะสมรวม</th></tr></thead><tbody>'
-    + gens.map(function (g) { return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td>' + fmtNum(g.count) + '</td><td>' + fmtMoney(g.totalSpend) + '</td></tr>'; }).join('')
+    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th></tr></thead><tbody>'
+    + gens.map(function (g) { return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td>' + fmtNum(g.count) + '</td><td>' + fmtNum(g.purchasedCount) + '</td><td>' + fmtMoney(g.totalSpend) + '</td></tr>'; }).join('')
     + '</tbody></table></div>';
   renderChart('membersGenChart', {
     type: 'bar',
@@ -611,13 +648,14 @@ function renderMembersGen(data) {
       labels: gens.map(function (g) { return g.label; }),
       datasets: [
         { label: 'ยอดซื้อสะสม (บาท)', data: gens.map(function (g) { return g.totalSpend; }), backgroundColor: PALETTE_[0], yAxisID: 'y' },
-        { label: 'จำนวนคน', data: gens.map(function (g) { return g.count; }), backgroundColor: PALETTE_[2], yAxisID: 'y1' }
+        { label: 'จำนวนที่สมัคร (คน)', data: gens.map(function (g) { return g.count; }), backgroundColor: PALETTE_[2], yAxisID: 'y1' }
       ]
     },
     options: baseChartOptions_({
       y: { position: 'left', title: { display: true, text: 'บาท' } },
       y1: { position: 'right', title: { display: true, text: 'คน' }, grid: { drawOnChartArea: false } }
-    })
+    }),
+    plugins: [valueLabelPlugin_([1], function (v) { return fmtNum(v); })]
   });
 }
 
