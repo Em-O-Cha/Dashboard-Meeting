@@ -290,26 +290,34 @@ function renderGroupTableWithChart_(sectionKey, list, chartId) {
     return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.name) + ' ' + (it.grouped ? '<span class="tag tag-grouped">จัดกลุ่มแล้ว</span>' : '<span class="tag tag-ungrouped">ยังไม่จัดกลุ่ม</span>') + '</td>'
       + '<td>' + fmtNum(it.qty) + '</td><td>' + fmtMoney(it.amount) + '</td><td>' + fmtNum(it.orderCount) + '</td></tr>';
   }).join('');
+  // Chart.js's canvas-based y-axis text rendering turned out to be unfixably broken on
+  // the user's real phone (confirmed on a fresh, cache-cleared load: even a 2-character
+  // "#1" was the only thing that survived — real Thai names always got cut down,
+  // regardless of length, container width, or canvas sizing). Numbers alone weren't
+  // acceptable either (no way to tell which product is which at a glance). So on mobile,
+  // skip Chart.js for this chart entirely and draw the bars as plain HTML/CSS instead —
+  // ordinary text in a normal element can't suffer the same canvas measurement bug.
+  // Desktop keeps the original Chart.js chart, which was never broken.
+  var isMobile_ = window.innerWidth <= 640;
+  if (isMobile_) {
+    var maxAmount_ = Math.max.apply(null, top.map(function (it) { return it.amount; }).concat([1]));
+    var hbarHtml = '<div class="hbar-list">' + top.map(function (it) {
+      var pct = maxAmount_ ? Math.max(2, it.amount / maxAmount_ * 100) : 2;
+      return '<div class="hbar-row">'
+        + '<div class="hbar-top"><span class="hbar-label">' + escHtml(it.name) + '</span><span class="hbar-value">' + fmtMoney(it.amount) + '</span></div>'
+        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE_[0] + '"></div></div>'
+        + '</div>';
+    }).join('') + '</div>';
+    body.innerHTML = hbarHtml
+      + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>สินค้า/กลุ่ม</th><th>จำนวน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+    return;
+  }
   body.innerHTML = '<div class="chart-wrap"><canvas id="' + chartId + '"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>สินค้า/กลุ่ม</th><th>จำนวน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
-  // Confirmed with a fresh, cache-cleared Safari load: Thai text on the y-axis still
-  // gets cut to 2-3 characters on the user's real phone no matter how short it's
-  // truncated — that part was never a caching artifact. The "#1 #2 #3" rank-number
-  // version was the only thing that actually rendered correctly on that device, so
-  // that's what mobile gets; full name is one tap away via the tooltip and always
-  // visible in the table row with the same number. Desktop keeps the real name.
-  var isMobile_ = window.innerWidth <= 640;
-  var fullNames_ = top.map(function (it) { return it.name; });
   renderChart(chartId, {
     type: 'bar',
-    data: {
-      labels: top.map(function (it, i) { return isMobile_ ? ('#' + (i + 1)) : truncateLabel_(it.name, 20); }),
-      datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }]
-    },
-    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
-      indexAxis: 'y',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { title: function (items) { return fullNames_[items[0].dataIndex]; } } } }
-    })
+    data: { labels: top.map(function (it) { return truncateLabel_(it.name, 20); }), datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }] },
+    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), { indexAxis: 'y', plugins: { legend: { display: false } } })
   });
 }
 
@@ -580,22 +588,27 @@ function renderSignups(data) {
 function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
-  body.innerHTML = '<div class="chart-wrap"><canvas id="campaignsChart"></canvas></div>'
-    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>'
-    + list.map(function (it, i) { return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('')
-    + '</tbody></table></div>';
-  var isMobileC_ = window.innerWidth <= 640;
-  var fullCampaignNames_ = list.map(function (it) { return it.campaign; });
+  var rowsHtml = list.map(function (it, i) { return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('');
+  var tableHtml = '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+  // See renderGroupTableWithChart_ above for why mobile draws plain HTML/CSS bars
+  // instead of a Chart.js canvas — the same y-axis text bug applies here.
+  if (window.innerWidth <= 640) {
+    var maxRevenue_ = Math.max.apply(null, list.map(function (it) { return it.revenue; }).concat([1]));
+    var hbarHtml = '<div class="hbar-list">' + list.map(function (it) {
+      var pct = maxRevenue_ ? Math.max(2, it.revenue / maxRevenue_ * 100) : 2;
+      return '<div class="hbar-row">'
+        + '<div class="hbar-top"><span class="hbar-label">' + escHtml(it.campaign) + '</span><span class="hbar-value">' + fmtMoney(it.revenue) + '</span></div>'
+        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE_[4] + '"></div></div>'
+        + '</div>';
+    }).join('') + '</div>';
+    body.innerHTML = hbarHtml + tableHtml;
+    return;
+  }
+  body.innerHTML = '<div class="chart-wrap"><canvas id="campaignsChart"></canvas></div>' + tableHtml;
   renderChart('campaignsChart', {
     type: 'bar',
-    data: {
-      labels: list.map(function (it, i) { return isMobileC_ ? ('#' + (i + 1)) : truncateLabel_(it.campaign, 20); }),
-      datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }]
-    },
-    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), {
-      indexAxis: 'y',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { title: function (items) { return fullCampaignNames_[items[0].dataIndex]; } } } }
-    })
+    data: { labels: list.map(function (it) { return truncateLabel_(it.campaign, 20); }), datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }] },
+    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), { indexAxis: 'y', plugins: { legend: { display: false } } })
   });
 }
 
