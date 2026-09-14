@@ -9,7 +9,7 @@ var CONFIG = {
 };
 
 var STATE = { password: '', dateFrom: '', dateTo: '' };
-var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null;
+var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null, lastProvinceData = null;
 var isLoadingAll = false;
 var lastCustomerDetail = {};
 var overviewGranularity = 'daily';
@@ -30,6 +30,7 @@ var REPORT_TITLES = {
   customers: 'ลูกค้าใหม่/ซื้อซ้ำ/ซื้อต่อเนื่อง',
   signups: 'สมาชิกใหม่รายสัปดาห์',
   membersGen: 'สมาชิก LINE แบ่งตาม Gen',
+  provinceRegion: 'จังหวัด/ภูมิภาคที่ซื้อเรา',
   campaigns: 'โปรโมชั่น'
 };
 
@@ -37,7 +38,8 @@ var NAV_SECTIONS = [
   ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['productGroups', '3. สินค้าที่ขายได้'], ['bestSellers', '4. สินค้าขายดี'],
   ['byAd', '5. ยอดขายแต่ละ Ad'], ['adShare', '6. สัดส่วนการขาย'], ['timeSlots', '7. ช่วงเวลาขายดี'],
   ['customers', '8. ลูกค้าใหม่/ซื้อซ้ำ'],
-  ['signups', '9. สมาชิกใหม่'], ['membersGen', '10. Gen สมาชิก'], ['campaigns', '11. โปรโมชั่น'], ['aiAll', '12. AI ภาพรวม']
+  ['signups', '9. สมาชิกใหม่'], ['membersGen', '10. Gen สมาชิก'], ['provinceRegion', '11. จังหวัด/ภูมิภาค'],
+  ['campaigns', '12. โปรโมชั่น'], ['aiAll', '13. AI ภาพรวม']
 ];
 
 // ==================== Utils ====================
@@ -179,6 +181,7 @@ function loadAll() {
   setSectionLoading_(['customers']);
   setSectionLoading_(['signups']);
   setSectionLoading_(['membersGen']);
+  setSectionLoading_(['provinceRegion']);
 
   // Fire these one at a time, not all at once — Google Apps Script Web Apps can reject
   // or return a non-JSON (HTML) error page for some requests when several hit the same
@@ -218,6 +221,12 @@ function loadAll() {
         if (!r || !r.success) { showSectionError_(['membersGen'], r ? r.error : ''); return; }
         lastMembersGenData = r; renderMembersGen(r);
       }).catch(function (e) { showSectionError_(['membersGen'], e.message); });
+    })
+    .then(function () {
+      return apiGet('getProvinceReport', {}).then(function (r) {
+        if (!r || !r.success) { showSectionError_(['provinceRegion'], r ? r.error : ''); return; }
+        lastProvinceData = r; renderProvinceReport(r);
+      }).catch(function (e) { showSectionError_(['provinceRegion'], e.message); });
     })
     .then(function () { isLoadingAll = false; });
 }
@@ -662,7 +671,54 @@ function renderMembersGen(data) {
   });
 }
 
-// ==================== Report 11: Campaigns ====================
+// ==================== Report 11: Province / Region ====================
+
+function monthKeyToThaiLabel_(mk) {
+  var parts = mk.split('-');
+  var y = +parts[0], m = +parts[1] - 1;
+  return (THAI_MONTHS_SHORT_[m] || mk) + ' ' + (y + 543);
+}
+
+function renderProvinceReport(data) {
+  var body = document.getElementById('provinceRegion-body');
+  var months = (data && data.months) || [];
+  if (!months.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลจังหวัดของออเดอร์</div>'; return; }
+  var noteHtml = (data.unmatchedProvinceCount > 0)
+    ? '<div class="info-note">มีออเดอร์ ' + fmtNum(data.unmatchedProvinceCount) + ' รายการ (จากทั้งหมด ' + fmtNum(data.totalOrders) + ' รายการ) ที่ไม่มีข้อมูลจังหวัด หรือระบุจังหวัดไม่ตรงกับ 77 จังหวัด เลยไม่ถูกนับในรายงานนี้</div>'
+    : '';
+
+  var regionsOverall = data.regionsOverall || [];
+  var maxRegionOrders_ = Math.max.apply(null, regionsOverall.map(function (r) { return r.orders; }).concat([1]));
+  var overallHtml = '<div class="province-overall"><div class="province-overall-hd">ภาพรวมทั้งหมด (ทุกเดือนรวมกัน) แบ่งตามภูมิภาค</div>'
+    + '<div class="hbar-list">' + regionsOverall.map(function (r, i) {
+      var pct = maxRegionOrders_ ? Math.max(2, r.orders / maxRegionOrders_ * 100) : 2;
+      return '<div class="hbar-row">'
+        + '<div class="hbar-top"><span class="hbar-label">' + escHtml(r.name) + '</span><span class="hbar-value">' + fmtNum(r.orders) + ' ออเดอร์ (' + fmtMoney(r.revenue) + ')</span></div>'
+        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE_[i % PALETTE_.length] + '"></div></div>'
+        + '</div>';
+    }).join('') + '</div></div>';
+
+  var monthsHtml = '<div class="province-months">' + months.map(function (m) {
+    var chips = (m.regions || []).map(function (r) {
+      var pct = m.totalOrders ? Math.round(r.orders / m.totalOrders * 100) : 0;
+      return '<span class="region-chip">' + escHtml(r.name) + ' ' + pct + '%</span>';
+    }).join('');
+    var top5 = (m.topProvinces || []).map(function (p, i) {
+      return '<li><span class="share-rank" style="background:' + PALETTE_[i % PALETTE_.length] + '">' + (i + 1) + '</span>'
+        + '<span class="name">' + escHtml(p.name) + '</span>'
+        + '<span class="val">' + fmtNum(p.orders) + ' ออเดอร์ · ' + fmtMoney(p.revenue) + '</span></li>';
+    }).join('');
+    return '<div class="province-month-card">'
+      + '<div class="province-month-hd"><span>' + monthKeyToThaiLabel_(m.month) + '</span><span class="cnt">' + fmtNum(m.totalOrders) + ' ออเดอร์รวม</span></div>'
+      + (top5 ? '<ol class="province-top5">' + top5 + '</ol>' : '<div class="empty-note">ไม่มีข้อมูลจังหวัดในเดือนนี้</div>')
+      + (chips ? '<div class="province-region-chips">' + chips + '</div>' : '')
+      + '</div>';
+  }).join('') + '</div>';
+
+  body.innerHTML = noteHtml + overallHtml + monthsHtml;
+}
+
+// ==================== Report 12: Campaigns ====================
 
 function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
@@ -765,6 +821,7 @@ function getReportDataFor_(key) {
   if (key === 'customers') return lastCustomersData;
   if (key === 'signups') return lastSignupsData;
   if (key === 'membersGen') return lastMembersGenData;
+  if (key === 'provinceRegion') return lastProvinceData;
   if (!lastDashboardData) return null;
   switch (key) {
     case 'overview': return lastDashboardData.overview;
@@ -797,7 +854,7 @@ function runAiAnalyze(key, btnEl) {
 function openOverallAI() {
   document.getElementById('overallAiModal').classList.add('show');
   var modalBody = document.getElementById('overallAiBody');
-  if (isLoadingAll || !lastDashboardData || !lastTargetsData || !lastCustomersData || !lastSignupsData || !lastMembersGenData) {
+  if (isLoadingAll || !lastDashboardData || !lastTargetsData || !lastCustomersData || !lastSignupsData || !lastMembersGenData || !lastProvinceData) {
     modalBody.innerHTML = '<div class="error-note">ข้อมูลบางรายงานยังโหลดไม่เสร็จ (รายงานจะโหลดเรียงกันทีละหัวข้อ) กรุณารอสักครู่จนทุกรายงานขึ้นข้อมูลครบ แล้วกด "วิเคราะห์ภาพรวม" ใหม่อีกครั้ง — ไม่งั้น AI จะไม่เห็นข้อมูลของรายงานที่ยังโหลดไม่เสร็จ</div>';
     return;
   }
@@ -814,7 +871,8 @@ function openOverallAI() {
     targets: lastTargetsData,
     customers: lastCustomersData,
     signups: lastSignupsData,
-    membersGen: lastMembersGenData
+    membersGen: lastMembersGenData,
+    provinceRegion: lastProvinceData
   };
   apiPost('aiAnalyzeAll', { bundle: JSON.stringify(bundle), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo, direction: direction })
     .then(function (r) {

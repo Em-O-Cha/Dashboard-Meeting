@@ -103,6 +103,19 @@ section.report{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0
 .hbar-track{background:#f0efec;border-radius:6px;height:16px;overflow:hidden;}
 .hbar-fill{height:100%;border-radius:6px;}
 
+.province-overall{background:#f9f8f5;border-radius:10px;padding:14px;margin-bottom:16px;}
+.province-overall-hd{font-size:12.5px;font-weight:700;color:var(--g6);margin-bottom:10px;}
+.province-months{display:flex;flex-direction:column;gap:10px;}
+.province-month-card{border:1px solid var(--bd);border-radius:10px;padding:12px 14px;}
+.province-month-hd{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;font-weight:700;color:var(--td);margin-bottom:8px;}
+.province-month-hd .cnt{font-size:11.5px;font-weight:600;color:var(--g6);}
+.province-top5{list-style:none;padding:0;margin:0 0 8px;display:flex;flex-direction:column;gap:6px;}
+.province-top5 li{display:flex;align-items:center;gap:8px;font-size:12.5px;}
+.province-top5 .name{flex:1;color:var(--td);}
+.province-top5 .val{color:var(--g6);font-size:11.5px;white-space:nowrap;}
+.province-region-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.region-chip{font-size:10.5px;background:#eef2fb;color:#2c4a7c;padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;}
+
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
 table.data-table th{text-align:left;padding:8px 10px;color:var(--g6);font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap;}
 table.data-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
@@ -349,9 +362,19 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
       <div class="ai-panel" id="ai-membersGen"></div>
     </section>
 
+    <section class="report" id="sec-provinceRegion">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">11</span> จังหวัด/ภูมิภาคที่ซื้อเรา <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div class="report-sub">5 อันดับจังหวัดที่มีออเดอร์มากที่สุดในแต่ละเดือน และสัดส่วนตามภูมิภาค เพื่อช่วยตัดสินใจว่าควรยิงแอดเจาะกลุ่มภาคไหน (อิงจังหวัดจัดส่งของแต่ละออเดอร์ในชีต Revenue)</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="provinceRegion">🤖 วิเคราะห์</button>
+      </div>
+      <div id="provinceRegion-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-provinceRegion"></div>
+    </section>
+
     <section class="report" id="sec-campaigns">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">11</span> โปรโมชั่น — ยอดขายและจำนวนออเดอร์</div>
+        <div><div class="report-title"><span class="num">12</span> โปรโมชั่น — ยอดขายและจำนวนออเดอร์</div>
         <div class="report-sub">แยกตามคอลัมน์ "Campaign" ในชีต Revenue</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="campaigns">🤖 วิเคราะห์</button>
       </div>
@@ -361,7 +384,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-aiAll">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">12</span> 🤖 AI สรุปและวิเคราะห์แนวโน้มภาพรวมทุกรายงาน</div>
+        <div><div class="report-title"><span class="num">13</span> 🤖 AI สรุปและวิเคราะห์แนวโน้มภาพรวมทุกรายงาน</div>
         <div class="report-sub">เชื่อมโยงข้อมูลจากทุกรายงานในช่วงวันที่ที่เลือก พร้อมแนวทางดำเนินการหลายทางเลือก</div></div>
         <div class="ai-btn-group">
           <input type="text" id="ai-dir-aiAll" class="ai-direction-input" placeholder="บอกทิศทางที่ต้องการให้ AI เน้น (ไม่ใส่ก็ได้)">
@@ -438,6 +461,6 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 </div>
 
 <script src="chart.umd.js"></script>
-<script src="dashboard.js?v=10"></script>
+<script src="dashboard.js?v=11"></script>
 </body>
 </html>
