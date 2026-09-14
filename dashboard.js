@@ -231,7 +231,7 @@ function loadAll() {
       }).catch(function (e) { showSectionError_(['provinceRegion'], e.message); });
     })
     .then(function () {
-      return apiGet('getDecliningProducts', { dateFrom: STATE.dateFrom, dateTo: STATE.dateTo }).then(function (r) {
+      return apiGet('getDecliningProducts', {}).then(function (r) {
         if (!r || !r.success) { showSectionError_(['decliningProducts'], r ? r.error : ''); return; }
         lastDecliningData = r; renderDecliningProducts(r);
       }).catch(function (e) { showSectionError_(['decliningProducts'], e.message); });
@@ -732,21 +732,26 @@ function renderDecliningProducts(data) {
   var body = document.getElementById('decliningProducts-body');
   var list = (data && data.declining) || [];
   if (data && data.note) { body.innerHTML = '<div class="info-note">' + escHtml(data.note) + '</div>'; return; }
-  var curRangeTxt = formatThaiDateRange_(data.dateFrom, data.dateTo);
-  var prevRangeTxt = formatThaiDateRange_(data.previousDateFrom, data.previousDateTo);
-  if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่ยอดขายลดลงในช่วงนี้ 🎉 (เทียบ ' + escHtml(curRangeTxt) + ' กับ ' + escHtml(prevRangeTxt) + ')</div>'; return; }
-  var rowsHtml = list.map(function (p, i) {
+  var monthKeys = data.completeMonthKeys || [];
+  var lastLabel = monthKeyToThaiLabel_(monthKeys[monthKeys.length - 1]);
+  var prevLabel = monthKeyToThaiLabel_(monthKeys[monthKeys.length - 2]);
+  if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่ยอดขายลดลงในตอนนี้ 🎉 (เทียบ ' + escHtml(lastLabel) + ' กับ ' + escHtml(prevLabel) + ')</div>'; return; }
+  var headHtml = '<th>สินค้า</th>' + monthKeys.map(function (mk) { return '<th>' + escHtml(monthKeyToThaiLabel_(mk)) + '</th>'; }).join('')
+    + '<th>ส่วนต่าง (บาท)</th><th>% เทียบเดือนก่อน</th>'
+    + (data.inProgressMonth ? '<th>' + escHtml(monthKeyToThaiLabel_(data.inProgressMonth)) + ' (เดือนนี้ ยังไม่จบ)</th>' : '');
+  var rowsHtml = list.map(function (p) {
     var tag = p.grouped ? '<span class="tag tag-grouped">จัดกลุ่มแล้ว</span>' : '<span class="tag tag-ungrouped">ยังไม่จัดกลุ่ม</span>';
-    var qtyTxt = p.qtyChangePct !== null ? (' (จำนวนชิ้น ' + (p.qtyChangePct > 0 ? '+' : '') + p.qtyChangePct.toFixed(0) + '%)') : '';
-    var sub = 'ช่วงที่เลือก (' + curRangeTxt + '): ' + fmtMoney(p.currentAmount) + ' (' + fmtNum(p.currentQty) + ' ชิ้น) '
-      + 'เทียบช่วงก่อนหน้า (' + prevRangeTxt + '): ' + fmtMoney(p.previousAmount) + ' (' + fmtNum(p.previousQty) + ' ชิ้น)' + qtyTxt;
-    return '<div class="decline-row">'
-      + '<div class="decline-hd"><span class="rank">' + (i + 1) + '</span><span class="name">' + escHtml(p.name) + ' ' + tag + '</span>'
-      + '<span class="pct">' + p.changePct.toFixed(0) + '%</span></div>'
-      + '<div class="decline-sub">' + sub + '</div>'
-      + '</div>';
+    var monthCells = p.monthly.map(function (m, i) {
+      var isLast = i === p.monthly.length - 1;
+      return '<td' + (isLast ? ' class="decline-neg"' : '') + '>' + fmtMoney(m.amount) + '</td>';
+    }).join('');
+    var inProgressCell = data.inProgressMonth ? ('<td class="decline-cur">' + (p.inProgress ? fmtMoney(p.inProgress.amount) : fmtMoney(0)) + '</td>') : '';
+    return '<tr><td>' + escHtml(p.name) + ' ' + tag + '</td>' + monthCells
+      + '<td class="decline-neg">' + fmtMoney(p.diffAmount) + '</td>'
+      + '<td class="decline-neg">' + p.changePct.toFixed(0) + '%</td>'
+      + inProgressCell + '</tr>';
   }).join('');
-  body.innerHTML = '<div class="decline-list">' + rowsHtml + '</div>';
+  body.innerHTML = '<div class="table-scroll"><table class="data-table"><thead><tr>' + headHtml + '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
 }
 
 // ==================== Report 13: Campaigns ====================
