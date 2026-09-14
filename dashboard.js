@@ -9,7 +9,7 @@ var CONFIG = {
 };
 
 var STATE = { password: '', dateFrom: '', dateTo: '' };
-var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null, lastProvinceData = null;
+var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null, lastProvinceData = null, lastDecliningData = null;
 var isLoadingAll = false;
 var lastCustomerDetail = {};
 var overviewGranularity = 'daily';
@@ -31,6 +31,7 @@ var REPORT_TITLES = {
   signups: 'สมาชิกใหม่รายสัปดาห์',
   membersGen: 'สมาชิก LINE แบ่งตาม Gen',
   provinceRegion: 'จังหวัด/ภูมิภาคที่ซื้อเรา',
+  decliningProducts: 'สินค้าที่ยอดขายกำลังลดลง',
   campaigns: 'โปรโมชั่น'
 };
 
@@ -39,7 +40,7 @@ var NAV_SECTIONS = [
   ['byAd', '5. ยอดขายแต่ละ Ad'], ['adShare', '6. สัดส่วนการขาย'], ['timeSlots', '7. ช่วงเวลาขายดี'],
   ['customers', '8. ลูกค้าใหม่/ซื้อซ้ำ'],
   ['signups', '9. สมาชิกใหม่'], ['membersGen', '10. Gen สมาชิก'], ['provinceRegion', '11. จังหวัด/ภูมิภาค'],
-  ['campaigns', '12. โปรโมชั่น'], ['aiAll', '13. AI ภาพรวม']
+  ['decliningProducts', '12. สินค้าขาลง'], ['campaigns', '13. โปรโมชั่น'], ['aiAll', '14. AI ภาพรวม']
 ];
 
 // ==================== Utils ====================
@@ -182,6 +183,7 @@ function loadAll() {
   setSectionLoading_(['signups']);
   setSectionLoading_(['membersGen']);
   setSectionLoading_(['provinceRegion']);
+  setSectionLoading_(['decliningProducts']);
 
   // Fire these one at a time, not all at once — Google Apps Script Web Apps can reject
   // or return a non-JSON (HTML) error page for some requests when several hit the same
@@ -227,6 +229,12 @@ function loadAll() {
         if (!r || !r.success) { showSectionError_(['provinceRegion'], r ? r.error : ''); return; }
         lastProvinceData = r; renderProvinceReport(r);
       }).catch(function (e) { showSectionError_(['provinceRegion'], e.message); });
+    })
+    .then(function () {
+      return apiGet('getDecliningProducts', {}).then(function (r) {
+        if (!r || !r.success) { showSectionError_(['decliningProducts'], r ? r.error : ''); return; }
+        lastDecliningData = r; renderDecliningProducts(r);
+      }).catch(function (e) { showSectionError_(['decliningProducts'], e.message); });
     })
     .then(function () { isLoadingAll = false; });
 }
@@ -718,7 +726,33 @@ function renderProvinceReport(data) {
   body.innerHTML = noteHtml + overallHtml + monthsHtml;
 }
 
-// ==================== Report 12: Campaigns ====================
+// ==================== Report 12: Declining products ====================
+
+function renderDecliningProducts(data) {
+  var body = document.getElementById('decliningProducts-body');
+  var list = (data && data.declining) || [];
+  if (data && data.note) { body.innerHTML = '<div class="info-note">' + escHtml(data.note) + '</div>'; return; }
+  if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่ยอดขายลดลงในตอนนี้ 🎉 (เทียบเดือน ' + escHtml(monthKeyToThaiLabel_(data.latestMonth)) + ' กับค่าเฉลี่ยเดือนก่อนหน้า)</div>'; return; }
+  var rowsHtml = list.map(function (p, i) {
+    var tag = p.grouped ? '<span class="tag tag-grouped">จัดกลุ่มแล้ว</span>' : '<span class="tag tag-ungrouped">ยังไม่จัดกลุ่ม</span>';
+    var qtyTxt = p.qtyChangePct !== null ? (' (จำนวนชิ้น ' + (p.qtyChangePct > 0 ? '+' : '') + p.qtyChangePct.toFixed(0) + '%)') : '';
+    var sub = 'เดือนล่าสุด (' + monthKeyToThaiLabel_(data.latestMonth) + '): ' + fmtMoney(p.latestAmount) + ' (' + fmtNum(p.latestQty) + ' ชิ้น) '
+      + 'เทียบค่าเฉลี่ยเดือนก่อนหน้า ' + fmtMoney(p.priorAvgAmount) + ' (' + fmtNum(Math.round(p.priorAvgQty)) + ' ชิ้น)' + qtyTxt;
+    var sparkline = p.monthly.map(function (m, mi) {
+      var isCur = mi === p.monthly.length - 1;
+      return '<span class="spark-mo' + (isCur ? ' cur' : '') + '">' + monthKeyToThaiLabel_(m.month) + ' <b>' + fmtMoney(m.amount) + '</b></span>';
+    }).join('');
+    return '<div class="decline-row">'
+      + '<div class="decline-hd"><span class="rank">' + (i + 1) + '</span><span class="name">' + escHtml(p.name) + ' ' + tag + '</span>'
+      + '<span class="pct">' + p.changePct.toFixed(0) + '%</span></div>'
+      + '<div class="decline-sub">' + sub + '</div>'
+      + '<div class="decline-sparkline">' + sparkline + '</div>'
+      + '</div>';
+  }).join('');
+  body.innerHTML = '<div class="decline-list">' + rowsHtml + '</div>';
+}
+
+// ==================== Report 13: Campaigns ====================
 
 function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
@@ -822,6 +856,7 @@ function getReportDataFor_(key) {
   if (key === 'signups') return lastSignupsData;
   if (key === 'membersGen') return lastMembersGenData;
   if (key === 'provinceRegion') return lastProvinceData;
+  if (key === 'decliningProducts') return lastDecliningData;
   if (!lastDashboardData) return null;
   switch (key) {
     case 'overview': return lastDashboardData.overview;
@@ -854,7 +889,7 @@ function runAiAnalyze(key, btnEl) {
 function openOverallAI() {
   document.getElementById('overallAiModal').classList.add('show');
   var modalBody = document.getElementById('overallAiBody');
-  if (isLoadingAll || !lastDashboardData || !lastTargetsData || !lastCustomersData || !lastSignupsData || !lastMembersGenData || !lastProvinceData) {
+  if (isLoadingAll || !lastDashboardData || !lastTargetsData || !lastCustomersData || !lastSignupsData || !lastMembersGenData || !lastProvinceData || !lastDecliningData) {
     modalBody.innerHTML = '<div class="error-note">ข้อมูลบางรายงานยังโหลดไม่เสร็จ (รายงานจะโหลดเรียงกันทีละหัวข้อ) กรุณารอสักครู่จนทุกรายงานขึ้นข้อมูลครบ แล้วกด "วิเคราะห์ภาพรวม" ใหม่อีกครั้ง — ไม่งั้น AI จะไม่เห็นข้อมูลของรายงานที่ยังโหลดไม่เสร็จ</div>';
     return;
   }
@@ -872,7 +907,8 @@ function openOverallAI() {
     customers: lastCustomersData,
     signups: lastSignupsData,
     membersGen: lastMembersGenData,
-    provinceRegion: lastProvinceData
+    provinceRegion: lastProvinceData,
+    decliningProducts: lastDecliningData
   };
   apiPost('aiAnalyzeAll', { bundle: JSON.stringify(bundle), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo, direction: direction })
     .then(function (r) {
