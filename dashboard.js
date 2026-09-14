@@ -231,7 +231,7 @@ function loadAll() {
       }).catch(function (e) { showSectionError_(['provinceRegion'], e.message); });
     })
     .then(function () {
-      return apiGet('getDecliningProducts', {}).then(function (r) {
+      return apiGet('getDecliningProducts', { dateFrom: STATE.dateFrom, dateTo: STATE.dateTo }).then(function (r) {
         if (!r || !r.success) { showSectionError_(['decliningProducts'], r ? r.error : ''); return; }
         lastDecliningData = r; renderDecliningProducts(r);
       }).catch(function (e) { showSectionError_(['decliningProducts'], e.message); });
@@ -732,21 +732,18 @@ function renderDecliningProducts(data) {
   var body = document.getElementById('decliningProducts-body');
   var list = (data && data.declining) || [];
   if (data && data.note) { body.innerHTML = '<div class="info-note">' + escHtml(data.note) + '</div>'; return; }
-  if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่ยอดขายลดลงในตอนนี้ 🎉 (เทียบเดือน ' + escHtml(monthKeyToThaiLabel_(data.latestMonth)) + ' กับค่าเฉลี่ยเดือนก่อนหน้า)</div>'; return; }
+  var curRangeTxt = formatThaiDateRange_(data.dateFrom, data.dateTo);
+  var prevRangeTxt = formatThaiDateRange_(data.previousDateFrom, data.previousDateTo);
+  if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่ยอดขายลดลงในช่วงนี้ 🎉 (เทียบ ' + escHtml(curRangeTxt) + ' กับ ' + escHtml(prevRangeTxt) + ')</div>'; return; }
   var rowsHtml = list.map(function (p, i) {
     var tag = p.grouped ? '<span class="tag tag-grouped">จัดกลุ่มแล้ว</span>' : '<span class="tag tag-ungrouped">ยังไม่จัดกลุ่ม</span>';
     var qtyTxt = p.qtyChangePct !== null ? (' (จำนวนชิ้น ' + (p.qtyChangePct > 0 ? '+' : '') + p.qtyChangePct.toFixed(0) + '%)') : '';
-    var sub = 'เดือนล่าสุด (' + monthKeyToThaiLabel_(data.latestMonth) + '): ' + fmtMoney(p.latestAmount) + ' (' + fmtNum(p.latestQty) + ' ชิ้น) '
-      + 'เทียบค่าเฉลี่ยเดือนก่อนหน้า ' + fmtMoney(p.priorAvgAmount) + ' (' + fmtNum(Math.round(p.priorAvgQty)) + ' ชิ้น)' + qtyTxt;
-    var sparkline = p.monthly.map(function (m, mi) {
-      var isCur = mi === p.monthly.length - 1;
-      return '<span class="spark-mo' + (isCur ? ' cur' : '') + '">' + monthKeyToThaiLabel_(m.month) + ' <b>' + fmtMoney(m.amount) + '</b></span>';
-    }).join('');
+    var sub = 'ช่วงที่เลือก (' + curRangeTxt + '): ' + fmtMoney(p.currentAmount) + ' (' + fmtNum(p.currentQty) + ' ชิ้น) '
+      + 'เทียบช่วงก่อนหน้า (' + prevRangeTxt + '): ' + fmtMoney(p.previousAmount) + ' (' + fmtNum(p.previousQty) + ' ชิ้น)' + qtyTxt;
     return '<div class="decline-row">'
       + '<div class="decline-hd"><span class="rank">' + (i + 1) + '</span><span class="name">' + escHtml(p.name) + ' ' + tag + '</span>'
       + '<span class="pct">' + p.changePct.toFixed(0) + '%</span></div>'
       + '<div class="decline-sub">' + sub + '</div>'
-      + '<div class="decline-sparkline">' + sparkline + '</div>'
       + '</div>';
   }).join('');
   body.innerHTML = '<div class="decline-list">' + rowsHtml + '</div>';
