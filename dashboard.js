@@ -31,7 +31,7 @@ var REPORT_TITLES = {
   signups: 'สมาชิกใหม่รายสัปดาห์',
   membersGen: 'สมาชิก LINE แบ่งตาม Gen',
   provinceRegion: 'จังหวัด/ภูมิภาคที่ซื้อเรา',
-  decliningProducts: 'สินค้าที่ยอดขายกำลังลดลง',
+  decliningProducts: 'สินค้าที่ยอดขายกำลังลดลง Top 10',
   campaigns: 'โปรโมชั่น'
 };
 
