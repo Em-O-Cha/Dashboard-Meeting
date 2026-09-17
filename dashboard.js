@@ -659,8 +659,10 @@ function renderMembersGen(data) {
     : '';
   body.innerHTML = noteHtml
     + '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
-    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th></tr></thead><tbody>'
-    + gens.map(function (g) { return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td>' + fmtNum(g.count) + '</td><td>' + fmtNum(g.purchasedCount) + '</td><td>' + fmtMoney(g.totalSpend) + '</td></tr>'; }).join('')
+    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>% ของยอดสมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th><th>% ของยอดขาย</th></tr></thead><tbody>'
+    + gens.map(function (g) {
+      return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td>' + fmtNum(g.count) + '</td><td>' + g.signupSharePct.toFixed(1) + '%</td><td>' + fmtNum(g.purchasedCount) + '</td><td>' + fmtMoney(g.totalSpend) + '</td><td>' + g.spendSharePct.toFixed(1) + '%</td></tr>';
+    }).join('')
     + '</tbody></table></div>';
   renderChart('membersGenChart', {
     type: 'bar',
