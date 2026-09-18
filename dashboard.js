@@ -660,14 +660,14 @@ function renderMembersGen(data) {
   var totalCount = gens.reduce(function (s, g) { return s + g.count; }, 0);
   var totalPurchased = gens.reduce(function (s, g) { return s + g.purchasedCount; }, 0);
   var totalSpendSum = gens.reduce(function (s, g) { return s + g.totalSpend; }, 0);
-  var totalRowHtml = '<tr class="row-total"><td>รวม</td><td>-</td><td>' + fmtNum(totalCount) + '</td><td class="pct-cell">-</td><td>'
-    + fmtNum(totalPurchased) + '</td><td>' + fmtMoney(totalSpendSum) + '</td><td class="pct-cell">-</td><td class="pct-cell">-</td></tr>';
+  var totalRowHtml = '<tr class="row-total"><td>รวม</td><td>-</td><td class="num-cell">' + fmtNum(totalCount) + '</td><td class="pct-cell">-</td><td class="num-cell">'
+    + fmtNum(totalPurchased) + '</td><td class="num-cell">' + fmtMoney(totalSpendSum) + '</td><td class="pct-cell">-</td><td class="pct-cell">-</td></tr>';
   body.innerHTML = noteHtml
     + '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>% ของยอดสมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th><th>% ของยอดขาย</th><th>ยอดขายเทียบสัดส่วนสมัคร</th></tr></thead><tbody>'
     + gens.map(function (g) {
       var idxTxt = g.spendVsSignupIndexPct === null ? '-' : Math.round(g.spendVsSignupIndexPct) + '%';
-      return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td>' + fmtNum(g.count) + '</td><td class="pct-cell">' + Math.round(g.signupSharePct) + '%</td><td>' + fmtNum(g.purchasedCount) + '</td><td>' + fmtMoney(g.totalSpend) + '</td><td class="pct-cell">' + Math.round(g.spendSharePct) + '%</td><td class="pct-cell">' + idxTxt + '</td></tr>';
+      return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td class="num-cell">' + fmtNum(g.count) + '</td><td class="pct-cell">' + Math.round(g.signupSharePct) + '%</td><td class="num-cell">' + fmtNum(g.purchasedCount) + '</td><td class="num-cell">' + fmtMoney(g.totalSpend) + '</td><td class="pct-cell">' + Math.round(g.spendSharePct) + '%</td><td class="pct-cell">' + idxTxt + '</td></tr>';
     }).join('')
     + totalRowHtml
     + '</tbody></table></div>';
