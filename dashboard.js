@@ -664,7 +664,7 @@ function renderMembersGen(data) {
     + fmtNum(totalPurchased) + '</td><td class="num-cell">' + fmtMoney(totalSpendSum) + '</td><td class="pct-cell">-</td><td class="pct-cell">-</td></tr>';
   body.innerHTML = noteHtml
     + '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
-    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>% ของยอดสมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th><th>% ของยอดขาย</th><th>ยอดขายเทียบสัดส่วนสมัคร</th></tr></thead><tbody>'
+    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>% ของยอดสมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th><th>% ของยอดขาย</th><th>% ที่ซื้อเทียบยอดสมัคร</th></tr></thead><tbody>'
     + gens.map(function (g) {
       var idxTxt = g.spendVsSignupIndexPct === null ? '-' : Math.round(g.spendVsSignupIndexPct) + '%';
       return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td class="num-cell">' + fmtNum(g.count) + '</td><td class="pct-cell">' + Math.round(g.signupSharePct) + '%</td><td class="num-cell">' + fmtNum(g.purchasedCount) + '</td><td class="num-cell">' + fmtMoney(g.totalSpend) + '</td><td class="pct-cell">' + Math.round(g.spendSharePct) + '%</td><td class="pct-cell">' + idxTxt + '</td></tr>';
