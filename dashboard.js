@@ -23,6 +23,7 @@ var REPORT_TITLES = {
   overview: 'ยอดขายรวม (รายวัน/สัปดาห์/เดือน + AOV)',
   productGroups: 'สินค้าที่ขายได้ (จัดกลุ่มด้วย Keyword)',
   bestSellers: 'สินค้าขายดี Top 10',
+  bestSellersByAd: 'สินค้าขายดี Top 10 แยกตาม Ad',
   byAd: 'ยอดขายแต่ละ Ad',
   adShare: 'สัดส่วนการขายแต่ละ Ad',
   timeSlots: 'ช่วงเวลาที่ขายดี',
@@ -37,10 +38,10 @@ var REPORT_TITLES = {
 
 var NAV_SECTIONS = [
   ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['productGroups', '3. สินค้าที่ขายได้'], ['bestSellers', '4. สินค้าขายดี'],
-  ['byAd', '5. ยอดขายแต่ละ Ad'], ['adShare', '6. สัดส่วนการขาย'], ['timeSlots', '7. ช่วงเวลาขายดี'],
-  ['customers', '8. ลูกค้าใหม่/ซื้อซ้ำ'],
-  ['signups', '9. สมาชิกใหม่'], ['membersGen', '10. Gen สมาชิก'], ['provinceRegion', '11. จังหวัด/ภูมิภาค'],
-  ['decliningProducts', '12. สินค้าขาลง'], ['campaigns', '13. โปรโมชั่น'], ['aiAll', '14. AI ภาพรวม']
+  ['bestSellersByAd', '5. ขายดีแยก Ad'], ['byAd', '6. ยอดขายแต่ละ Ad'], ['adShare', '7. สัดส่วนการขาย'], ['timeSlots', '8. ช่วงเวลาขายดี'],
+  ['customers', '9. ลูกค้าใหม่/ซื้อซ้ำ'],
+  ['signups', '10. สมาชิกใหม่'], ['membersGen', '11. Gen สมาชิก'], ['provinceRegion', '12. จังหวัด/ภูมิภาค'],
+  ['decliningProducts', '13. สินค้าขาลง'], ['campaigns', '14. โปรโมชั่น'], ['aiAll', '15. AI ภาพรวม']
 ];
 
 // ==================== Utils ====================
@@ -170,7 +171,7 @@ function buildNavTabs() {
 
 // ==================== Load & render all reports ====================
 
-var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'byAd', 'adShare', 'timeSlots', 'campaigns'];
+var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'bestSellersByAd', 'byAd', 'adShare', 'timeSlots', 'campaigns'];
 
 function setSectionLoading_(keys) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="empty-note">กำลังโหลด...</div>'; }); }
 function showSectionError_(keys, msg) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="error-note">โหลดข้อมูลไม่สำเร็จ: ' + escHtml(msg || '') + '</div>'; }); }
@@ -195,6 +196,7 @@ function loadAll() {
     renderOverview(r.overview, r.cancelledOrdersExcluded, r.unpaidLineShopExcluded);
     renderProductGroups(r.productGroups);
     renderBestSellers(r.productGroups);
+    renderBestSellersByAd(r.byAd, r.productQtyByAd);
     renderByAd(r.byAd);
     renderAdShare(r.byAd, r.productQtyByAd);
     renderTimeSlots(r.timeSlots);
@@ -400,7 +402,30 @@ function renderBestSellers(list) {
     + '</tbody></table></div>';
 }
 
-// ==================== Report 4 & 5: By Ad ====================
+// ==================== Report 5: Best sellers split by Ad ====================
+
+function renderBestSellersByAd(byAdList, productQtyByAd) {
+  var body = document.getElementById('bestSellersByAd-body');
+  if (!productQtyByAd || !productQtyByAd.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
+  var adOrder = (byAdList || []).slice().sort(function (a, b) { return b.revenue - a.revenue; }).map(function (it) { return it.ad; });
+  var medals = ['🥇', '🥈', '🥉'];
+  var blocksHtml = productQtyByAd.slice()
+    .filter(function (adEntry) { return adEntry.products && adEntry.products.length; })
+    .sort(function (a, b) { return adOrder.indexOf(a.ad) - adOrder.indexOf(b.ad); })
+    .map(function (adEntry) {
+      var products = adEntry.products; // already sorted by amount desc (aggregateByKeywordGroups_)
+      var totalAmount = products.reduce(function (s, p) { return s + p.amount; }, 0);
+      var top = products.slice(0, 10);
+      var rowsHtml = top.map(function (p, i) {
+        return '<tr><td class="rank-medal">' + (medals[i] || ('#' + (i + 1))) + '</td><td>' + escHtml(p.name) + '</td><td>' + fmtMoney(p.amount) + '</td><td>' + (totalAmount ? (p.amount / totalAmount * 100).toFixed(1) : '0') + '%</td><td>' + fmtNum(p.orderCount) + '</td></tr>';
+      }).join('');
+      return '<div class="ad-block"><div class="ad-block-hd"><span>' + escHtml(adEntry.ad) + '</span><span class="cnt">รวม ' + fmtMoney(totalAmount) + '</span></div>'
+        + '<div class="table-scroll"><table class="data-table"><thead><tr><th>อันดับ</th><th>สินค้า/กลุ่ม</th><th>ยอดขาย</th><th>สัดส่วน</th><th>จำนวนออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div></div>';
+    }).join('');
+  body.innerHTML = blocksHtml || '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>';
+}
+
+// ==================== Report 6 & 7: By Ad ====================
 
 function renderByAd(list) {
   var body = document.getElementById('byAd-body');
@@ -873,6 +898,7 @@ function getReportDataFor_(key) {
     case 'overview': return lastDashboardData.overview;
     case 'productGroups': return lastDashboardData.productGroups;
     case 'bestSellers': return (lastDashboardData.productGroups || []).slice(0, 10);
+    case 'bestSellersByAd': return lastDashboardData.productQtyByAd;
     case 'byAd': return lastDashboardData.byAd;
     case 'adShare': return lastDashboardData.byAd;
     case 'timeSlots': return lastDashboardData.timeSlots;
