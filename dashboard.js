@@ -679,16 +679,12 @@ function renderMembersGen(data) {
   var body = document.getElementById('membersGen-body');
   var gens = (data && data.gens) || [];
   if (!gens.length) { body.innerHTML = '<div class="empty-note">' + escHtml((data && data.note) || 'ไม่มีข้อมูล Gen ของสมาชิก') + '</div>'; return; }
-  var noteHtml = (data.noBirthdateCount > 0)
-    ? '<div class="info-note">มีสมาชิก ' + fmtNum(data.noBirthdateCount) + ' คน (จากทั้งหมด ' + fmtNum(data.totalMembers) + ' คน) ที่ไม่มีข้อมูลวันเกิดในชีต เลยไม่ถูกจัดกลุ่ม Gen — ตัวเลขด้านล่างนับเฉพาะคนที่มีวันเกิดเท่านั้น</div>'
-    : '';
   var totalCount = gens.reduce(function (s, g) { return s + g.count; }, 0);
   var totalPurchased = gens.reduce(function (s, g) { return s + g.purchasedCount; }, 0);
   var totalSpendSum = gens.reduce(function (s, g) { return s + g.totalSpend; }, 0);
   var totalRowHtml = '<tr class="row-total"><td>รวม</td><td>-</td><td class="num-cell">' + fmtNum(totalCount) + '</td><td class="pct-cell">-</td><td class="num-cell">'
     + fmtNum(totalPurchased) + '</td><td class="num-cell">' + fmtMoney(totalSpendSum) + '</td><td class="pct-cell">-</td><td class="pct-cell">-</td></tr>';
-  body.innerHTML = noteHtml
-    + '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
+  body.innerHTML = '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>% ของยอดสมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th><th>% ของยอดขาย</th><th>% ที่ซื้อเทียบยอดสมัคร</th></tr></thead><tbody>'
     + gens.map(function (g) {
       var idxTxt = g.spendVsSignupIndexPct === null ? '-' : Math.round(g.spendVsSignupIndexPct) + '%';
