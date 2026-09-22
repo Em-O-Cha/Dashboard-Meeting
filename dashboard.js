@@ -649,7 +649,8 @@ function renderSignups(data) {
   body.innerHTML = '<div class="stat-grid">'
     + '<div class="stat-card"><div class="label">สมาชิกใหม่ในช่วงนี้</div><div class="value">' + fmtNum(data.totalNewMembers) + '</div></div>'
     + '<div class="stat-card"><div class="label">สิทธิ์ต้อนรับ: ยังไม่หมดอายุ/ยังไม่ใช้</div><div class="value">' + fmtNum(wp.stillActive) + '</div></div>'
-    + '<div class="stat-card"><div class="label">สิทธิ์ต้อนรับ: ใช้แล้ว/หมดอายุแล้ว</div><div class="value">' + fmtNum(wp.usedOrExpired) + '</div></div>'
+    + '<div class="stat-card"><div class="label">สิทธิ์ต้อนรับ: ใช้แล้ว (ประมาณ)</div><div class="value">' + fmtNum(wp.used) + '</div></div>'
+    + '<div class="stat-card"><div class="label">สิทธิ์ต้อนรับ: หมดอายุแล้ว (ประมาณ)</div><div class="value">' + fmtNum(wp.expired) + '</div></div>'
     + '</div>'
     + (wp.note ? '<div class="info-note">' + escHtml(wp.note) + '</div>' : '')
     + (weeks.length ? '<div class="chart-wrap"><canvas id="signupsChart"></canvas></div>' : '<div class="empty-note">ไม่มีสมาชิกใหม่ในช่วงวันที่นี้</div>');
