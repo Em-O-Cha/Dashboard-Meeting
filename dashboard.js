@@ -9,7 +9,7 @@ var CONFIG = {
 };
 
 var STATE = { password: '', dateFrom: '', dateTo: '' };
-var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null, lastProvinceData = null, lastDecliningData = null;
+var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null, lastProvinceData = null, lastDecliningData = null, lastMonthlyTrendData = null;
 var isLoadingAll = false;
 var lastCustomerDetail = {};
 var overviewGranularity = 'daily';
@@ -28,6 +28,7 @@ var REPORT_TITLES = {
   adShare: 'สัดส่วนการขายแต่ละ Ad',
   timeSlots: 'ช่วงเวลาที่ขายดี',
   targets: 'ยอดขายเทียบเป้าหมายรายเดือน',
+  monthlyTrend: 'ยอดขายแต่ละเดือนเทียบกัน (12 เดือนย้อนหลัง)',
   customers: 'ลูกค้าใหม่/ซื้อซ้ำ/ซื้อต่อเนื่อง',
   signups: 'สมาชิกใหม่รายสัปดาห์',
   membersGen: 'สมาชิก LINE แบ่งตาม Gen',
@@ -37,11 +38,11 @@ var REPORT_TITLES = {
 };
 
 var NAV_SECTIONS = [
-  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['productGroups', '3. สินค้าที่ขายได้'], ['bestSellers', '4. สินค้าขายดี'],
-  ['bestSellersByAd', '5. ขายดีแยก Ad'], ['byAd', '6. ยอดขายแต่ละ Ad'], ['adShare', '7. สัดส่วนการขาย'], ['timeSlots', '8. ช่วงเวลาขายดี'],
-  ['customers', '9. ลูกค้าใหม่/ซื้อซ้ำ'],
-  ['signups', '10. สมาชิกใหม่'], ['membersGen', '11. Gen สมาชิก'], ['provinceRegion', '12. จังหวัด/ภูมิภาค'],
-  ['decliningProducts', '13. สินค้าขาลง'], ['campaigns', '14. โปรโมชั่น'], ['aiAll', '15. AI ภาพรวม']
+  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'],
+  ['bestSellersByAd', '6. ขายดีแยก Ad'], ['byAd', '7. ยอดขายแต่ละ Ad'], ['adShare', '8. สัดส่วนการขาย'], ['timeSlots', '9. ช่วงเวลาขายดี'],
+  ['customers', '10. ลูกค้าใหม่/ซื้อซ้ำ'],
+  ['signups', '11. สมาชิกใหม่'], ['membersGen', '12. Gen สมาชิก'], ['provinceRegion', '13. จังหวัด/ภูมิภาค'],
+  ['decliningProducts', '14. สินค้าขาลง'], ['campaigns', '15. โปรโมชั่น'], ['aiAll', '16. AI ภาพรวม']
 ];
 
 // ==================== Utils ====================
@@ -185,6 +186,7 @@ function loadAll() {
   setSectionLoading_(['membersGen']);
   setSectionLoading_(['provinceRegion']);
   setSectionLoading_(['decliningProducts']);
+  setSectionLoading_(['monthlyTrend']);
 
   // Fire these one at a time, not all at once — Google Apps Script Web Apps can reject
   // or return a non-JSON (HTML) error page for some requests when several hit the same
@@ -237,6 +239,12 @@ function loadAll() {
         if (!r || !r.success) { showSectionError_(['decliningProducts'], r ? r.error : ''); return; }
         lastDecliningData = r; renderDecliningProducts(r);
       }).catch(function (e) { showSectionError_(['decliningProducts'], e.message); });
+    })
+    .then(function () {
+      return apiGet('getMonthlyTrend', {}).then(function (r) {
+        if (!r || !r.success) { showSectionError_(['monthlyTrend'], r ? r.error : ''); return; }
+        lastMonthlyTrendData = r; renderMonthlyTrend(r);
+      }).catch(function (e) { showSectionError_(['monthlyTrend'], e.message); });
     })
     .then(function () { isLoadingAll = false; });
 }
@@ -594,7 +602,31 @@ function renderTargets(data) {
   });
 }
 
-// ==================== Report 9: Customers ====================
+// ==================== Report 3: Monthly sales trend (last 12 months, all-time) ====================
+
+function renderMonthlyTrend(data) {
+  var body = document.getElementById('monthlyTrend-body');
+  var months = (data && data.months) || [];
+  if (!months.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูล</div>'; return; }
+  var colors = months.map(function (m, i) { return PALETTE_[i % PALETTE_.length]; });
+  body.innerHTML = '<div class="chart-wrap"><canvas id="monthlyTrendChart"></canvas></div>'
+    + '<div class="table-scroll"><table class="data-table"><thead><tr><th>เดือน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>'
+    + months.map(function (m, i) {
+      return '<tr><td><span class="legend-dot" style="background:' + colors[i] + '"></span>' + escHtml(monthKeyToThaiLabel_(m.month)) + '</td><td>' + fmtMoney(m.revenue) + '</td><td>' + fmtNum(m.orders) + '</td></tr>';
+    }).join('')
+    + '</tbody></table></div>';
+  renderChart('monthlyTrendChart', {
+    type: 'bar',
+    data: {
+      labels: months.map(function (m) { return monthKeyToThaiLabel_(m.month); }),
+      datasets: [{ label: 'ยอดขาย', data: months.map(function (m) { return m.revenue; }), backgroundColor: colors }]
+    },
+    options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'บาท' } } }), { plugins: { legend: { display: false } } }),
+    plugins: [valueLabelPlugin_([0], function (v) { return fmtMoney(v); })]
+  });
+}
+
+// ==================== Report 10: Customers ====================
 
 function renderCustomers(result) {
   var body = document.getElementById('customers-body');
@@ -885,6 +917,7 @@ function renderAiPanel(panelId, analysis, savedAt) {
 }
 function getReportDataFor_(key) {
   if (key === 'targets') return lastTargetsData;
+  if (key === 'monthlyTrend') return lastMonthlyTrendData;
   if (key === 'customers') return lastCustomersData;
   if (key === 'signups') return lastSignupsData;
   if (key === 'membersGen') return lastMembersGenData;
