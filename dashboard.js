@@ -52,6 +52,11 @@ function escAttr(s) { return escHtml(s).replace(/"/g, '&quot;'); }
 function fmtMoney(n) { n = Number(n) || 0; return '฿' + Math.round(n).toLocaleString('th-TH'); }
 function fmtNum(n) { n = Number(n) || 0; return Math.round(n).toLocaleString('th-TH'); }
 function truncateLabel_(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n) + '…' : s; }
+function hexToRgba_(hex, alpha) {
+  var h = String(hex || '').replace('#', '');
+  var r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
 function toInputDate_(d) {
   var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
   return y + '-' + m + '-' + day;
@@ -416,6 +421,10 @@ function renderBestSellersByAd(byAdList, productQtyByAd) {
   var body = document.getElementById('bestSellersByAd-body');
   if (!productQtyByAd || !productQtyByAd.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
   var adOrder = (byAdList || []).slice().sort(function (a, b) { return b.revenue - a.revenue; }).map(function (it) { return it.ad; });
+  // Same Ad -> color mapping (by revenue rank) as report 8's colorByAd, so the same
+  // channel reads as the same color across both reports instead of each picking its own.
+  var colorByAd = {};
+  adOrder.forEach(function (ad, i) { colorByAd[ad] = PALETTE_[i % PALETTE_.length]; });
   var medals = ['🥇', '🥈', '🥉'];
   var blocksHtml = productQtyByAd.slice()
     .filter(function (adEntry) { return adEntry.products && adEntry.products.length; })
@@ -424,10 +433,14 @@ function renderBestSellersByAd(byAdList, productQtyByAd) {
       var products = adEntry.products; // already sorted by amount desc (aggregateByKeywordGroups_)
       var totalAmount = products.reduce(function (s, p) { return s + p.amount; }, 0);
       var top = products.slice(0, 10);
+      var color = colorByAd[adEntry.ad] || PALETTE_[0];
       var rowsHtml = top.map(function (p, i) {
         return '<tr><td class="rank-medal">' + (medals[i] || ('#' + (i + 1))) + '</td><td>' + escHtml(p.name) + '</td><td>' + fmtMoney(p.amount) + '</td><td>' + (totalAmount ? (p.amount / totalAmount * 100).toFixed(1) : '0') + '%</td><td>' + fmtNum(p.orderCount) + '</td></tr>';
       }).join('');
-      return '<div class="ad-block"><div class="ad-block-hd"><span>' + escHtml(adEntry.ad) + '</span><span class="cnt">รวม ' + fmtMoney(totalAmount) + '</span></div>'
+      return '<div class="ad-block" style="border-left-color:' + color + '">'
+        + '<div class="ad-block-hd" style="background:' + hexToRgba_(color, 0.1) + '">'
+        + '<span class="ad-name"><span class="legend-dot" style="background:' + color + '"></span><span style="color:' + color + '">' + escHtml(adEntry.ad) + '</span></span>'
+        + '<span class="cnt">รวม ' + fmtMoney(totalAmount) + '</span></div>'
         + '<div class="table-scroll"><table class="data-table"><thead><tr><th>อันดับ</th><th>สินค้า/กลุ่ม</th><th>ยอดขาย</th><th>สัดส่วน</th><th>จำนวนออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div></div>';
     }).join('');
   body.innerHTML = blocksHtml || '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>';
