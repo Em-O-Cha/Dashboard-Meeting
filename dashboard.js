@@ -116,7 +116,7 @@ function handleLogin() {
   btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
   STATE.password = pw;
   apiGet('verifyPassword', {}).then(function (r) {
-    btn.disabled = false; btn.textContent = '🔐 เข้าสู่ระบบ';
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ →';
     if (r && r.success) {
       try { sessionStorage.setItem('emocha.dashboard.password', pw); } catch (e) {}
       enterApp();
@@ -124,9 +124,15 @@ function handleLogin() {
       showLoginErr((r && r.error) || 'เข้าสู่ระบบไม่สำเร็จ');
     }
   }).catch(function (e) {
-    btn.disabled = false; btn.textContent = '🔐 เข้าสู่ระบบ';
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ →';
     showLoginErr('เชื่อมต่อไม่สำเร็จ: ' + e.message);
   });
+}
+function toggleLoginPasswordVisibility() {
+  var input = document.getElementById('loginPassword');
+  var btn = document.getElementById('loginEyeBtn');
+  if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+  else { input.type = 'password'; btn.textContent = '👁️'; }
 }
 function showLoginErr(msg) {
   var el = document.getElementById('loginErr');
