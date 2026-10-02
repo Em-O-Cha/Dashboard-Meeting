@@ -275,7 +275,34 @@ function renderChart(canvasId, config) {
   var canvas = document.getElementById(canvasId);
   if (!canvas) return;
   if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  applyValueLabelHeadroom_(config);
   chartInstances[canvasId] = new Chart(canvas.getContext('2d'), config);
+}
+// Reserves extra room above the tallest labeled bar's value-axis max so valueLabelPlugin_'s
+// text doesn't get clipped by the chart area edge. Computed on the plain config object before
+// Chart.js ever sees it — mutating chart.options.scales.* after construction (e.g. from a
+// plugin lifecycle hook) corrupts Chart.js's internal resolved-options object instead.
+function applyValueLabelHeadroom_(config) {
+  var plugin = (config.plugins || []).filter(function (p) { return p && p.labelDatasetIndexes; })[0];
+  if (!plugin) return;
+  var isHorizontal = config.options && config.options.indexAxis === 'y';
+  var axisKey = isHorizontal ? 'x' : 'y';
+  var maxByScale = {};
+  plugin.labelDatasetIndexes.forEach(function (di) {
+    var dataset = config.data.datasets[di];
+    if (!dataset) return;
+    var scaleId = dataset[axisKey + 'AxisID'] || axisKey;
+    var max = (dataset.data || []).reduce(function (m, v) { return (v === null || v === undefined) ? m : Math.max(m, v); }, 0);
+    maxByScale[scaleId] = Math.max(maxByScale[scaleId] || 0, max);
+  });
+  config.options = config.options || {};
+  config.options.scales = config.options.scales || {};
+  Object.keys(maxByScale).forEach(function (scaleId) {
+    if (maxByScale[scaleId] <= 0) return;
+    config.options.scales[scaleId] = config.options.scales[scaleId] || {};
+    var scaleOpt = config.options.scales[scaleId];
+    scaleOpt.suggestedMax = Math.max(scaleOpt.suggestedMax || 0, maxByScale[scaleId] * 1.15);
+  });
 }
 function baseChartOptions_(scalesExtra) {
   return {
@@ -292,6 +319,10 @@ function baseChartOptions_(scalesExtra) {
 function valueLabelPlugin_(datasetIndexes, formatFn) {
   return {
     id: 'valueLabels',
+    // Read by applyValueLabelHeadroom_ (in renderChart) to reserve headroom above the
+    // tallest labeled bar before Chart.js is constructed, so the label text drawn just
+    // outside the bar doesn't get clipped by the chart area edge.
+    labelDatasetIndexes: datasetIndexes,
     afterDatasetsDraw: function (chart) {
       var ctx = chart.ctx;
       var isHorizontal = chart.options.indexAxis === 'y';
