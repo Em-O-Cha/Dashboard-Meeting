@@ -22,33 +22,56 @@ a{color:inherit;}
 button{font-family:'Kanit',sans-serif;cursor:pointer;}
 .sh{display:none !important;}
 
-/* ==================== Login gate ==================== */
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 30% 15%,#fdf6ec 0%,#f4f5f3 55%);}
-@property --login-ring-angle{syntax:'<angle>';inherits:false;initial-value:0deg;}
-.login-circle-wrap{position:relative;width:min(88vw,400px);aspect-ratio:1/1;border-radius:50%;}
-.login-ring{position:absolute;inset:0;border-radius:50%;z-index:0;
-  background:conic-gradient(from var(--login-ring-angle),#ff5e5e,#ffb347,#ffe066,#6ee7b7,#60a5fa,#a78bfa,#f472b6,#ff5e5e);
-  animation:loginRingSpin 6s linear infinite;}
-@keyframes loginRingSpin{to{--login-ring-angle:360deg;}}
-@media (prefers-reduced-motion: reduce){.login-ring{animation:none;}}
-.login-circle{position:absolute;inset:16px;z-index:1;border-radius:50%;background:#fff;box-shadow:0 14px 40px rgba(0,0,0,.16);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:17% 15%;}
-.login-avatar{width:52px;height:52px;border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,.18);overflow:hidden;margin-bottom:10px;flex:0 0 auto;}
+/* ==================== Login gate: วงกลมนูน + วงแหวนสีรุ้ง (หมุนระหว่างรอเข้าระบบ) ==================== */
+:root{
+  --lg-bg:#e4e9f0; --lg-dark:#c2c8d2; --lg-light:#ffffff;
+  --lg-text:#3d4452; --lg-muted:#8a93a3; --lg-accent:#5b6bd5; --lg-ring:14px;
+}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--lg-bg);}
+.login-ring{position:relative;width:min(100%,400px);aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
+.login-ring::before,.login-ring::after{content:'';position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(#ff2d55,#ff9500,#ffd60a,#34c759,#00c7be,#0a84ff,#5e5ce6,#bf5af2,#ff2d55);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--lg-ring)),#000 calc(100% - var(--lg-ring) + 1px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - var(--lg-ring)),#000 calc(100% - var(--lg-ring) + 1px));}
+.login-ring::after{filter:blur(16px);opacity:.75;}
+.login-ring.spinning::before,.login-ring.spinning::after{animation:lgSpin 1s linear infinite;}
+.login-ring.spinning::after{opacity:1;}
+@keyframes lgSpin{to{transform:rotate(360deg);}}
+.login-ring.shake{animation:lgShake .45s;}
+@keyframes lgShake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-9px);}40%,80%{transform:translateX(9px);}}
+.login-disc{position:relative;z-index:1;width:calc(100% - 44px);aspect-ratio:1/1;border-radius:50%;background:var(--lg-bg);
+  box-shadow:14px 14px 30px var(--lg-dark),-14px -14px 30px var(--lg-light);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 13%;text-align:center;}
+.login-avatar{width:64px;height:64px;border-radius:50%;background:var(--lg-bg);box-shadow:5px 5px 10px var(--lg-dark),-5px -5px 10px var(--lg-light);
+  display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;}
 .login-avatar img{width:100%;height:100%;object-fit:cover;}
-.login-circle h1{font-size:16.5px;font-weight:700;color:var(--td);line-height:1.3;}
-.login-circle .login-sub{font-size:10.5px;color:var(--g6);margin:4px 0 14px;line-height:1.4;}
-.login-input-wrap{position:relative;width:100%;margin-bottom:10px;}
-.login-input-wrap input{width:100%;height:40px;padding:0 36px;border:1.5px solid #eee;border-radius:999px;font-size:13px;font-family:'Kanit',sans-serif;background:#f8f9fa;transition:border-color .15s,background .15s;}
-.login-input-wrap input:focus{outline:none;border-color:var(--gm);background:#fff;}
-.login-input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:12.5px;opacity:.5;pointer-events:none;}
-.login-eye-btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;line-height:1;padding:7px;opacity:.55;border-radius:8px;}
-.login-eye-btn:hover{opacity:1;background:#eee;}
-.login-circle button#loginBtn{width:100%;height:38px;border:none;border-radius:999px;background:linear-gradient(135deg,#01579b 0%,#0d3b66 100%);color:#fff;font-size:13px;font-weight:600;box-shadow:0 6px 16px rgba(2,136,209,.35);margin-top:2px;transition:transform .12s,box-shadow .12s;}
-.login-circle button#loginBtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 20px rgba(2,136,209,.45);}
-.login-circle button#loginBtn:disabled{opacity:.55;}
-.login-err{background:#ffebee;color:#c62828;border-radius:8px;padding:6px 10px;font-size:10.5px;margin-bottom:8px;display:none;width:100%;}
-.login-err.show{display:block;}
-.login-hint{font-size:8.5px;color:var(--g6);margin-top:10px;line-height:1.45;text-align:center;}
+.login-title{font-size:22px;font-weight:700;color:var(--lg-text);}
+.login-sub{font-size:12px;color:var(--lg-muted);margin:2px 0 18px;}
+.login-field{position:relative;width:100%;margin-bottom:10px;}
+.login-field input{width:100%;height:50px;border:none;border-radius:25px;background:var(--lg-bg);padding:0 46px 0 44px;
+  font-size:15px;font-family:'Kanit',sans-serif;color:var(--lg-text);
+  box-shadow:inset 6px 6px 12px var(--lg-dark),inset -6px -6px 12px var(--lg-light);}
+.login-field input:focus{outline:none;box-shadow:inset 7px 7px 14px #b9c0cb,inset -7px -7px 14px var(--lg-light),0 0 0 2px rgba(91,107,213,.25);}
+.login-field input::placeholder{color:#9aa3b2;}
+.login-field .lf-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:var(--lg-muted);}
+.login-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.login-eye svg{width:18px;height:18px;fill:var(--lg-muted);}
+.login-err{font-size:12.5px;color:#c62828;min-height:18px;margin:2px 0 6px;}
+.login-btn{width:100%;height:50px;border:none;border-radius:25px;background:var(--lg-bg);color:var(--lg-accent);font-size:15px;font-weight:700;
+  font-family:'Kanit',sans-serif;letter-spacing:.5px;cursor:pointer;box-shadow:7px 7px 14px var(--lg-dark),-7px -7px 14px var(--lg-light);transition:box-shadow .15s;}
+.login-btn:active,.login-btn:disabled{box-shadow:inset 5px 5px 10px var(--lg-dark),inset -5px -5px 10px var(--lg-light);}
+.login-btn:disabled{cursor:wait;color:var(--lg-muted);}
+.login-hint{font-size:10px;color:var(--lg-muted);margin-top:12px;line-height:1.45;text-align:center;}
+@media (max-width:440px){
+  .login-disc{width:calc(100% - 40px);padding:0 14%;}
+  .login-avatar{width:56px;height:56px;margin-bottom:8px;}
+  .login-title{font-size:19px;}
+  .login-sub{font-size:11.5px;margin:1px 0 12px;}
+  .login-field input,.login-btn{height:44px;border-radius:22px;}
+  .login-field{margin-bottom:6px;}
+  .login-err{min-height:16px;margin:0 0 6px;font-size:12px;}
+}
+@media (prefers-reduced-motion:reduce){.login-ring.spinning::before,.login-ring.spinning::after{animation-duration:3s;}}
 
 /* ==================== App shell ==================== */
 #appShell{display:none;min-height:100vh;flex-direction:column;}
@@ -236,21 +259,20 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
 <!-- ==================== Login gate ==================== -->
 <div id="loginScreen">
-  <div class="login-circle-wrap">
-    <div class="login-ring"></div>
-    <div class="login-circle">
+  <div class="login-ring" id="loginRing">
+    <form class="login-disc" id="loginForm" autocomplete="on">
       <div class="login-avatar"><img src="logo-em-o-cha.png" alt="Em-O-Cha"></div>
-      <h1>แดชบอร์ดรายงานยอดขาย</h1>
-      <p class="login-sub">คนรักเอมโอชา คลับ — สำหรับทีมงานเท่านั้น</p>
-      <div class="login-err" id="loginErr"></div>
-      <div class="login-input-wrap">
-        <span class="login-input-icon">🔒</span>
-        <input type="password" id="loginPassword" placeholder="รหัสผ่านแดชบอร์ด" autocomplete="current-password">
-        <button type="button" class="login-eye-btn" id="loginEyeBtn" onclick="toggleLoginPasswordVisibility()" aria-label="แสดง/ซ่อนรหัสผ่าน">👁️</button>
+      <div class="login-title">ยินดีต้อนรับ</div>
+      <div class="login-sub">แดชบอร์ดรายงานยอดขาย — เอมโอชา</div>
+      <div class="login-field">
+        <svg class="lf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v13h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9z"/></svg>
+        <input type="password" id="loginPassword" placeholder="รหัสผ่านแดชบอร์ด" autocomplete="current-password" aria-label="รหัสผ่าน">
+        <button type="button" class="login-eye" id="loginEyeBtn" aria-label="แสดงรหัส"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5C6.5 5 2.7 9.1 1.5 12c1.2 2.9 5 7 10.5 7s9.3-4.1 10.5-7C21.3 9.1 17.5 5 12 5zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg></button>
       </div>
-      <button id="loginBtn" onclick="handleLogin()">เข้าสู่ระบบ →</button>
+      <div class="login-err" id="loginErr" role="alert"></div>
+      <button type="submit" class="login-btn" id="loginBtn">เข้าสู่ระบบ →</button>
       <p class="login-hint">รหัสผ่านนี้ถูกตั้งค่าไว้ในฝั่ง Apps Script โดยผู้ดูแลระบบ ไม่ใช่รหัสผ่าน LINE</p>
-    </div>
+    </form>
   </div>
 </div>
 
@@ -520,6 +542,6 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 </div>
 
 <script src="chart.umd.js"></script>
-<script src="dashboard.js?v=27"></script>
+<script src="dashboard.js?v=28"></script>
 </body>
 </html>

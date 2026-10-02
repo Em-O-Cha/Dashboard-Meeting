@@ -108,35 +108,44 @@ function apiPost(action, params) {
 
 // ==================== Auth ====================
 
-function handleLogin() {
-  var pw = document.getElementById('loginPassword').value;
-  if (!pw) return;
-  if (isApiNotConfigured_()) { showLoginErr('ยังไม่ได้ตั้งค่า API_URL ในไฟล์ dashboard.js — ดูวิธีตั้งค่าในเอกสารที่แนบมากับไฟล์ DashboardApi.gs'); return; }
+function setLoginBusy_(on) {
+  document.getElementById('loginRing').classList.toggle('spinning', on);
   var btn = document.getElementById('loginBtn');
-  btn.disabled = true; btn.textContent = '⏳ กำลังตรวจสอบ...';
+  btn.disabled = on; btn.textContent = on ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ →';
+}
+function handleLogin(e) {
+  if (e) e.preventDefault();
+  var pw = document.getElementById('loginPassword').value;
+  if (!pw) { showLoginErr('กรุณากรอกรหัสผ่าน'); return; }
+  if (isApiNotConfigured_()) { showLoginErr('ยังไม่ได้ตั้งค่า API_URL ในไฟล์ dashboard.js — ดูวิธีตั้งค่าในเอกสารที่แนบมากับไฟล์ DashboardApi.gs'); return; }
+  showLoginErr('');
+  setLoginBusy_(true);
   STATE.password = pw;
   apiGet('verifyPassword', {}).then(function (r) {
-    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ →';
     if (r && r.success) {
+      setLoginBusy_(false);
       try { sessionStorage.setItem('emocha.dashboard.password', pw); } catch (e) {}
       enterApp();
     } else {
       showLoginErr((r && r.error) || 'เข้าสู่ระบบไม่สำเร็จ');
     }
   }).catch(function (e) {
-    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ →';
     showLoginErr('เชื่อมต่อไม่สำเร็จ: ' + e.message);
   });
 }
 function toggleLoginPasswordVisibility() {
   var input = document.getElementById('loginPassword');
   var btn = document.getElementById('loginEyeBtn');
-  if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
-  else { input.type = 'password'; btn.textContent = '👁️'; }
+  var show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.setAttribute('aria-label', show ? 'ซ่อนรหัส' : 'แสดงรหัส');
 }
 function showLoginErr(msg) {
-  var el = document.getElementById('loginErr');
-  el.textContent = msg; el.classList.add('show');
+  setLoginBusy_(false);
+  document.getElementById('loginErr').textContent = msg || '';
+  if (!msg) return;
+  var ring = document.getElementById('loginRing');
+  ring.classList.remove('shake'); void ring.offsetWidth; ring.classList.add('shake');
 }
 function handleLogout() {
   try { sessionStorage.removeItem('emocha.dashboard.password'); } catch (e) {}
@@ -1109,7 +1118,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var hint = document.querySelector('.login-hint');
     if (hint) hint.innerHTML = '⚠️ ยังไม่ได้ตั้งค่า API_URL ในไฟล์ dashboard.js — กรุณาดูวิธีตั้งค่าในเอกสารที่แนบมากับไฟล์ DashboardApi.gs ก่อนใช้งาน';
   }
-  document.getElementById('loginPassword').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleLogin(); });
+  document.getElementById('loginForm').addEventListener('submit', handleLogin);
+  document.getElementById('loginEyeBtn').addEventListener('click', toggleLoginPasswordVisibility);
   document.querySelectorAll('.preset-btn[data-preset]').forEach(function (btn) { btn.addEventListener('click', function () { setPreset(btn.getAttribute('data-preset')); }); });
   document.querySelectorAll('.ai-btn').forEach(function (btn) {
     var key = btn.getAttribute('data-report');
