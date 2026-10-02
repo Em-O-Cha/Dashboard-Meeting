@@ -883,26 +883,18 @@ function renderCampaigns(list) {
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
   var rowsHtml = list.map(function (it, i) { return '<tr><td>' + (i + 1) + '</td><td>' + escHtml(it.campaign) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td></tr>'; }).join('');
   var tableHtml = '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>แคมเปญ/โปรโมชั่น</th><th>ยอดขาย</th><th>จำนวนออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
-  // See renderGroupTableWithChart_ above for why mobile draws plain HTML/CSS bars
-  // instead of a Chart.js canvas — the same y-axis text bug applies here.
-  if (window.innerWidth <= 640) {
-    var maxRevenue_ = Math.max.apply(null, list.map(function (it) { return it.revenue; }).concat([1]));
-    var hbarHtml = '<div class="hbar-list">' + list.map(function (it) {
-      var pct = maxRevenue_ ? Math.max(2, it.revenue / maxRevenue_ * 100) : 2;
-      return '<div class="hbar-row">'
-        + '<div class="hbar-top"><span class="hbar-label">' + escHtml(it.campaign) + '</span><span class="hbar-value">' + fmtMoney(it.revenue) + '</span></div>'
-        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE_[4] + '"></div></div>'
-        + '</div>';
-    }).join('') + '</div>';
-    body.innerHTML = hbarHtml + tableHtml;
-    return;
-  }
-  body.innerHTML = '<div class="chart-wrap"><canvas id="campaignsChart"></canvas></div>' + tableHtml;
-  renderChart('campaignsChart', {
-    type: 'bar',
-    data: { labels: list.map(function (it) { return truncateLabel_(it.campaign, 20); }), datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: PALETTE_[4] }] },
-    options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), { indexAxis: 'y', plugins: { legend: { display: false } } })
-  });
+  // Plain HTML/CSS bars (same hbar-list style as report 13's province chart) instead of a
+  // Chart.js canvas — labels wrap/show in full instead of getting truncated by the canvas,
+  // and it reads consistently with the rest of the dashboard's "overview" style charts.
+  var maxRevenue_ = Math.max.apply(null, list.map(function (it) { return it.revenue; }).concat([1]));
+  var hbarHtml = '<div class="hbar-list">' + list.map(function (it, i) {
+    var pct = maxRevenue_ ? Math.max(2, it.revenue / maxRevenue_ * 100) : 2;
+    return '<div class="hbar-row">'
+      + '<div class="hbar-top"><span class="hbar-label">' + escHtml(it.campaign) + '</span><span class="hbar-value">' + fmtMoney(it.revenue) + ' (' + fmtNum(it.orders) + ' ออเดอร์)</span></div>'
+      + '<div class="hbar-track"><div class="hbar-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE_[i % PALETTE_.length] + '"></div></div>'
+      + '</div>';
+  }).join('') + '</div>';
+  body.innerHTML = hbarHtml + tableHtml;
 }
 
 // ==================== Report 12: AI analysis ====================
