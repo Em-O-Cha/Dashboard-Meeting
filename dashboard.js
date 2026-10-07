@@ -767,6 +767,23 @@ function renderSignups(data) {
 
 // ==================== Report 10: Members by generation ====================
 
+// Rank 1-3 per % column (highest first). Ranks compare the rounded % shown in the
+// table so two cells that read the same share a rank. null/0 values and the
+// "ยังไม่มีข้อมูล" row are left unranked — the latter isn't a real Gen and its tiny
+// sample (e.g. 2 of 2 bought = 100%) would otherwise always take first place.
+function topRanks_(values) {
+  return values.map(function (v) {
+    if (v === null || v <= 0) return 0;
+    var higher = values.filter(function (o) { return o !== null && o > v; }).length;
+    return higher < 3 ? higher + 1 : 0;
+  });
+}
+
+function pctRankCell_(text, rank) {
+  if (!rank) return '<td class="pct-cell">' + text + '</td>';
+  return '<td class="pct-cell pct-rank-' + rank + '"><span class="pct-rank">' + rank + '</span>' + text + '</td>';
+}
+
 function renderMembersGen(data) {
   var body = document.getElementById('membersGen-body');
   var gens = (data && data.gens) || [];
@@ -774,16 +791,26 @@ function renderMembersGen(data) {
   var totalCount = gens.reduce(function (s, g) { return s + g.count; }, 0);
   var totalPurchased = gens.reduce(function (s, g) { return s + g.purchasedCount; }, 0);
   var totalSpendSum = gens.reduce(function (s, g) { return s + g.totalSpend; }, 0);
+  // Round first so ranks match what the table displays.
+  var rankable = function (pick) {
+    return topRanks_(gens.map(function (g) { var v = pick(g); return (g.key === 'unknown' || String(g.label).indexOf('ยังไม่มีข้อมูล') === 0 || v === null) ? null : Math.round(v); }));
+  };
+  var signupRanks = rankable(function (g) { return g.signupSharePct; });
+  var spendRanks = rankable(function (g) { return g.spendSharePct; });
+  var idxRanks = rankable(function (g) { return g.spendVsSignupIndexPct; });
   var totalRowHtml = '<tr class="row-total"><td>รวม</td><td>-</td><td class="num-cell">' + fmtNum(totalCount) + '</td><td class="pct-cell">-</td><td class="num-cell">'
     + fmtNum(totalPurchased) + '</td><td class="num-cell">' + fmtMoney(totalSpendSum) + '</td><td class="pct-cell">-</td><td class="pct-cell">-</td></tr>';
   body.innerHTML = '<div class="chart-wrap"><canvas id="membersGenChart"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Gen</th><th>ช่วงปีเกิด</th><th>จำนวนที่สมัคร</th><th>% ของยอดสมัคร</th><th>จำนวนที่ซื้อ</th><th>ยอดซื้อสะสมรวม</th><th>% ของยอดขาย</th><th>% ที่ซื้อเทียบยอดสมัคร</th></tr></thead><tbody>'
-    + gens.map(function (g) {
+    + gens.map(function (g, i) {
       var idxTxt = g.spendVsSignupIndexPct === null ? '-' : Math.round(g.spendVsSignupIndexPct) + '%';
-      return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td class="num-cell">' + fmtNum(g.count) + '</td><td class="pct-cell">' + Math.round(g.signupSharePct) + '%</td><td class="num-cell">' + fmtNum(g.purchasedCount) + '</td><td class="num-cell">' + fmtMoney(g.totalSpend) + '</td><td class="pct-cell">' + Math.round(g.spendSharePct) + '%</td><td class="pct-cell">' + idxTxt + '</td></tr>';
+      return '<tr><td>' + escHtml(g.label) + '</td><td>' + escHtml(g.yearsLabel) + '</td><td class="num-cell">' + fmtNum(g.count) + '</td>'
+        + pctRankCell_(Math.round(g.signupSharePct) + '%', signupRanks[i]) + '<td class="num-cell">' + fmtNum(g.purchasedCount) + '</td><td class="num-cell">' + fmtMoney(g.totalSpend) + '</td>'
+        + pctRankCell_(Math.round(g.spendSharePct) + '%', spendRanks[i]) + pctRankCell_(idxTxt, idxRanks[i]) + '</tr>';
     }).join('')
     + totalRowHtml
-    + '</tbody></table></div>';
+    + '</tbody></table></div>'
+    + '<div class="pct-rank-legend"><span class="pct-rank-1"><span class="pct-rank">1</span>อันดับ 1</span><span class="pct-rank-2"><span class="pct-rank">2</span>อันดับ 2</span><span class="pct-rank-3"><span class="pct-rank">3</span>อันดับ 3</span><span>(เรียงในแต่ละคอลัมน์ % ไม่นับแถว "ยังไม่มีข้อมูล")</span></div>';
   renderChart('membersGenChart', {
     type: 'bar',
     data: {
