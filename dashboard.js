@@ -500,12 +500,35 @@ function renderByAd(list) {
   body.innerHTML = '<div class="chart-wrap"><canvas id="byAdChart"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>Ad / ช่องทาง</th><th>ยอดขาย</th><th>ออเดอร์</th><th>AOV</th></tr></thead><tbody>'
     + list.map(function (it) { return '<tr><td>' + escHtml(it.ad) + '</td><td>' + fmtMoney(it.revenue) + '</td><td>' + fmtNum(it.orders) + '</td><td>' + fmtMoney(it.aov) + '</td></tr>'; }).join('')
-    + '</tbody></table></div>';
+    + '</tbody></table></div>'
+    + renderPaymentsByAd_(list);
   renderChart('byAdChart', {
     type: 'bar',
     data: { labels: list.map(function (it) { return it.ad; }), datasets: [{ label: 'ยอดขาย', data: list.map(function (it) { return it.revenue; }), backgroundColor: list.map(function (_, i) { return PALETTE_[i % PALETTE_.length]; }) }] },
     options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'บาท' } } }), { plugins: { legend: { display: false } } })
   });
+}
+// Payment methods within each Ad (column "Payment"): % is of that Ad's own sales, not the store's.
+// Ad colors follow the list order (revenue desc), same as the bar chart above.
+function renderPaymentsByAd_(list) {
+  var blocks = list.filter(function (it) { return it.payments && it.payments.length; }).map(function (it) {
+    var adColor = PALETTE_[list.indexOf(it) % PALETTE_.length];
+    var bar = it.payments.map(function (p, j) {
+      return '<span style="width:' + p.revenuePct.toFixed(2) + '%;background:' + PALETTE_[j % PALETTE_.length] + '" title="' + escAttr(p.method + ' ' + p.revenuePct.toFixed(1) + '%') + '"></span>';
+    }).join('');
+    var rows = it.payments.map(function (p, j) {
+      return '<tr><td><span class="pay-name"><span class="legend-dot" style="background:' + PALETTE_[j % PALETTE_.length] + '"></span><span>' + escHtml(p.method) + '</span></span></td>'
+        + '<td>' + fmtMoney(p.revenue) + '</td><td><b>' + p.revenuePct.toFixed(1) + '%</b></td><td>' + fmtNum(p.orders) + '</td></tr>';
+    }).join('');
+    return '<div class="ad-block" style="border-left-color:' + adColor + '">'
+      + '<div class="ad-block-hd" style="background:' + hexToRgba_(adColor, 0.1) + '">'
+      + '<span class="ad-name"><span class="legend-dot" style="background:' + adColor + '"></span><span style="color:' + adColor + '">' + escHtml(it.ad) + '</span></span>'
+      + '<span class="cnt">รวม ' + fmtMoney(it.revenue) + ' · ' + fmtNum(it.orders) + ' ออเดอร์</span></div>'
+      + '<div class="pay-bar">' + bar + '</div>'
+      + '<div class="table-scroll"><table class="data-table"><thead><tr><th>ชำระเงินแบบ</th><th>ยอดขาย</th><th>สัดส่วน</th><th>ออเดอร์</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+  }).join('');
+  if (!blocks) return '';
+  return '<div class="pay-section"><p class="share-title">ช่องทางชำระเงินของแต่ละ Ad <span style="font-weight:400;color:var(--g6);font-size:12px">(สัดส่วน = % จากยอดขายของ Ad นั้น)</span></p>' + blocks + '</div>';
 }
 function renderAdShare(list, productQtyByAd) {
   var body = document.getElementById('adShare-body');
