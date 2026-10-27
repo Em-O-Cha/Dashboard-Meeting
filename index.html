@@ -180,6 +180,10 @@ table.data-table td.pct-cell.pct-rank-3{background:#fff1bf;color:#7a5a00;}
 .pay-name .legend-dot{flex:0 0 auto;}
 
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+/* ตารางช่องทางชำระเงินของแต่ละ Ad: คอลัมน์กว้างเท่ากันทุกตาราง ตัวเลขชิดขวา */
+table.pay-table{table-layout:fixed;min-width:420px;}
+table.pay-table th.num,table.pay-table td.num{text-align:right;padding-right:18px;}
+table.pay-table td{overflow:hidden;text-overflow:ellipsis;}
 table.data-table th{text-align:left;padding:8px 10px;color:var(--g6);font-weight:600;border-bottom:2px solid var(--border);white-space:nowrap;}
 table.data-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
 table.data-table tbody tr:hover{background:#fafafa;}

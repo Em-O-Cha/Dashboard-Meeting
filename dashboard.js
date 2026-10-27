@@ -520,14 +520,15 @@ function renderPaymentsByAd_(list) {
     }).join('');
     var rows = it.payments.map(function (p, j) {
       return '<tr><td><span class="pay-name"><span class="legend-dot" style="background:' + PALETTE_[j % PALETTE_.length] + '"></span><span>' + escHtml(p.method) + '</span></span></td>'
-        + '<td>' + fmtMoney(p.revenue) + '</td><td><b>' + p.revenuePct.toFixed(1) + '%</b></td><td>' + fmtNum(p.orders) + '</td></tr>';
+        + '<td class="num">' + fmtMoney(p.revenue) + '</td><td class="num"><b>' + p.revenuePct.toFixed(1) + '%</b></td><td class="num">' + fmtNum(p.orders) + '</td></tr>';
     }).join('');
     return '<div class="ad-block" style="border-left-color:' + adColor + '">'
       + '<div class="ad-block-hd" style="background:' + hexToRgba_(adColor, 0.1) + '">'
       + '<span class="ad-name"><span class="legend-dot" style="background:' + adColor + '"></span><span style="color:' + adColor + '">' + escHtml(it.ad) + '</span></span>'
       + '<span class="cnt">รวม ' + fmtMoney(it.revenue) + ' · ' + fmtNum(it.orders) + ' ออเดอร์</span></div>'
       + '<div class="pay-bar">' + bar + '</div>'
-      + '<div class="table-scroll"><table class="data-table"><thead><tr><th>ชำระเงินแบบ</th><th>ยอดขาย</th><th>สัดส่วน</th><th>ออเดอร์</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+      + '<div class="table-scroll"><table class="data-table pay-table"><colgroup><col style="width:43%"><col style="width:21%"><col style="width:18%"><col style="width:18%"></colgroup>'
+      + '<thead><tr><th>ชำระเงินแบบ</th><th class="num">ยอดขาย</th><th class="num">สัดส่วน</th><th class="num">ออเดอร์</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
   }).join('');
   if (!blocks) return '';
   return '<div class="pay-section"><p class="share-title">ช่องทางชำระเงินของแต่ละ Ad <span style="font-weight:400;color:var(--g6);font-size:12px">(สัดส่วน = % จากยอดขายของ Ad นั้น)</span></p>' + blocks + '</div>';
