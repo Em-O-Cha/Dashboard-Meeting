@@ -23,6 +23,7 @@ var REPORT_TITLES = {
   overview: 'ยอดขายรวม (รายวัน/สัปดาห์/เดือน + AOV)',
   productGroups: 'สินค้าที่ขายได้ (จัดกลุ่มด้วย Keyword)',
   bestSellers: 'สินค้าขายดี Top 10',
+  chiliSize: 'พริกผัดน้ำมัน 120 ก. เทียบ 230 ก. (% จากจำนวนกระปุก)',
   bestSellersByAd: 'สินค้าขายดี Top 10 แยกตาม Ad',
   byAd: 'ยอดขายแต่ละ Ad',
   adShare: 'สัดส่วนการขายแต่ละ Ad',
@@ -38,7 +39,7 @@ var REPORT_TITLES = {
 };
 
 var NAV_SECTIONS = [
-  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'],
+  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'], ['chiliSize', '5.1 พริกผัด 120 ก.'],
   ['bestSellersByAd', '6. ขายดีแยก Ad'], ['byAd', '7. ยอดขายแต่ละ Ad'], ['adShare', '8. สัดส่วนการขาย'], ['timeSlots', '9. ช่วงเวลาขายดี'],
   ['customers', '10. ลูกค้าใหม่/ซื้อซ้ำ'],
   ['signups', '11. สมาชิกใหม่'], ['membersGen', '12. Gen สมาชิก'], ['provinceRegion', '13. จังหวัด/ภูมิภาค'],
@@ -192,7 +193,7 @@ function buildNavTabs() {
 
 // ==================== Load & render all reports ====================
 
-var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'bestSellersByAd', 'byAd', 'adShare', 'timeSlots', 'campaigns'];
+var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'chiliSize', 'bestSellersByAd', 'byAd', 'adShare', 'timeSlots', 'campaigns'];
 
 function setSectionLoading_(keys) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="empty-note">กำลังโหลด...</div>'; }); }
 function showSectionError_(keys, msg) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="error-note">โหลดข้อมูลไม่สำเร็จ: ' + escHtml(msg || '') + '</div>'; }); }
@@ -218,6 +219,7 @@ function loadAll() {
     renderOverview(r.overview, r.cancelledOrdersExcluded, r.unpaidLineShopExcluded);
     renderProductGroups(r.productGroups);
     renderBestSellers(r.productGroups);
+    renderChiliSize(r.chiliSize);
     renderBestSellersByAd(r.byAd, r.productQtyByAd);
     renderByAd(r.byAd);
     renderAdShare(r.byAd, r.productQtyByAd);
@@ -928,6 +930,37 @@ function renderDecliningProducts(data) {
 
 // ==================== Report 13: Campaigns ====================
 
+// ⚡ (27/10/69) พริกผัดน้ำมัน 120 ก. เทียบ 230 ก. (backend: reportChiliSize_ ใน DashboardApi.gs)
+function chiliPct_(a, b) { return a + b ? (Math.round(a * 1000 / (a + b)) / 10) + '%' : '-'; }
+function renderChiliSize(cs) {
+  var body = document.getElementById('chiliSize-body');
+  if (!cs) { body.innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
+  if (!(cs.q120 + cs.q230)) { body.innerHTML = '<div class="empty-note">ไม่มียอดขายพริกผัดในช่วงวันที่นี้</div>'; return; }
+  function kpi(lbl, q, a, p, bg, fg) {
+    return '<div style="flex:1;min-width:140px;background:' + bg + ';border-radius:12px;padding:12px 14px"><div style="font-weight:700;color:' + fg + ';font-size:14px">' + lbl + '</div>'
+      + '<div style="font-size:24px;font-weight:700;color:' + fg + ';margin-top:4px">' + fmtNum(q) + ' กระปุก</div><div style="color:' + fg + ';font-size:14px">' + fmtMoney(a) + '</div>'
+      + '<div style="color:' + fg + ';font-size:12.5px;margin-top:2px">' + p + ' ของจำนวน</div></div>';
+  }
+  function table(head, rows) {
+    return '<div class="table-scroll"><table class="data-table"><thead><tr><th>' + head + '</th><th>120 ก.</th><th>230 ก.</th><th>% 120 ก.</th></tr></thead><tbody>'
+      + rows.map(function (r) { return '<tr><td>' + escHtml(r[0]) + '</td><td>' + fmtNum(r[1]) + '</td><td>' + fmtNum(r[2]) + '</td><td><b style="color:#e65100">' + chiliPct_(r[1], r[2]) + '</b></td></tr>'; }).join('')
+      + '</tbody></table></div>';
+  }
+  var h = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0">' + kpi('🆕 120 กรัม', cs.q120, cs.a120, chiliPct_(cs.q120, cs.q230), '#fff3e0', '#e65100') + kpi('230 กรัม', cs.q230, cs.a230, chiliPct_(cs.q230, cs.q120), '#ffebee', '#c62828') + '</div>'
+    + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0;background:#eee">' + (cs.q120 ? '<div style="flex:' + cs.q120 + ';background:#fb8c00"></div>' : '') + (cs.q230 ? '<div style="flex:' + cs.q230 + ';background:#c62828"></div>' : '') + '</div>'
+    + '<div class="report-sub" style="margin-bottom:12px">ยอดเงิน 120 ก. = ' + chiliPct_(cs.a120, cs.a230) + ' ของยอดพริกผัดทั้งหมด</div>'
+    + '<div style="font-weight:700;margin:10px 0 6px">แยกตามรส</div>'
+    + table('รส', (cs.flavors || []).map(function (f) { return [f.flavor, f.q120, f.q230]; }));
+  if ((cs.weeks || []).length) {
+    h += '<div style="font-weight:700;margin:14px 0 6px">แนวโน้มรายสัปดาห์ (% 120 ก. จากจำนวนกระปุก)</div><div class="hbar-list">'
+      + cs.weeks.map(function (w) { var t = w.q120 + w.q230, pc = t ? w.q120 / t * 100 : 0;
+        return '<div class="hbar-row"><div class="hbar-top"><span class="hbar-label">' + escHtml(w.label) + '</span><span class="hbar-value">' + chiliPct_(w.q120, w.q230) + '</span></div>'
+          + '<div class="hbar-track"><div class="hbar-fill" style="width:' + Math.max(pc ? 2 : 0, pc).toFixed(1) + '%;background:#fb8c00"></div></div></div>'; }).join('')
+      + '</div>' + table('สัปดาห์', cs.weeks.map(function (w) { return [w.label, w.q120, w.q230]; }));
+  }
+  body.innerHTML = h;
+}
+
 function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
@@ -1030,6 +1063,7 @@ function getReportDataFor_(key) {
     case 'productGroups': return lastDashboardData.productGroups;
     case 'bestSellers': return (lastDashboardData.productGroups || []).slice(0, 10);
     case 'bestSellersByAd': return lastDashboardData.productQtyByAd;
+    case 'chiliSize': return lastDashboardData.chiliSize;
     case 'byAd': return lastDashboardData.byAd;
     case 'adShare': return lastDashboardData.byAd;
     case 'timeSlots': return lastDashboardData.timeSlots;
