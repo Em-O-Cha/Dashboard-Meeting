@@ -958,6 +958,12 @@ function renderChiliSize(cs) {
           + '<div class="hbar-track"><div class="hbar-fill" style="width:' + Math.max(pc ? 2 : 0, pc).toFixed(1) + '%;background:#fb8c00"></div></div></div>'; }).join('')
       + '</div>' + table('สัปดาห์', cs.weeks.map(function (w) { return [w.label, w.q120, w.q230]; }));
   }
+  if (cs.launch) {
+    h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 เทียบช่วงเปิดตัว (นับจากวันที่ขายกระปุกแรก)</div>'
+      + '<div class="table-scroll"><table class="data-table"><thead><tr>' + cs.launch.head.map(function (x) { return '<th>' + escHtml(x) + '</th>'; }).join('') + '</tr></thead><tbody>'
+      + cs.launch.rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td>' + (i === 3 ? '<b style="color:#e65100">' + escHtml(x) + '</b>' : escHtml(x)) + '</td>'; }).join('') + '</tr>'; }).join('')
+      + '</tbody></table></div><div class="report-sub" style="margin-top:6px">' + escHtml(cs.launch.note) + '</div>';
+  }
   body.innerHTML = h;
 }
 
