@@ -989,26 +989,26 @@ function renderChiliSize(cs) {
 function renderPurpose(d) {
   var body = document.getElementById('purpose-body');
   if (!d) { body.innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
-  if (!d.total) { body.innerHTML = '<div class="empty-note">ไม่มีออเดอร์ LINE Shop ในช่วงวันที่นี้</div>'; return; }
+  // ⚡ (28/10/69) ไม่แสดงออเดอร์ที่ไม่ได้ระบุ (ไม่ตอบ / ก่อนเริ่มถาม) — นับเฉพาะออเดอร์ที่ลูกค้าตอบ
   var answered = d.rows.filter(function (r) { return r.purpose !== 'ไม่ได้ระบุ'; });
+  if (!answered.length) { body.innerHTML = '<div class="empty-note">ยังไม่มีลูกค้า LINE Shop ตอบในช่วงวันที่นี้</div>'; return; }
   var max = Math.max.apply(null, answered.map(function (r) { return r.orders; }).concat([1]));
   var pct = function (n, t) { return t ? (Math.round(n * 1000 / t) / 10) + '%' : '-'; };
-  var h = '<div class="report-sub" style="margin-bottom:8px">ลูกค้าตอบ ' + fmtNum(d.answered) + ' จาก ' + fmtNum(d.total) + ' ออเดอร์ (' + pct(d.answered, d.total) + ')</div>';
-  if (answered.length) {
+  var h = '<div class="report-sub" style="margin-bottom:8px">ลูกค้าตอบ ' + fmtNum(d.answered) + ' ออเดอร์</div>';
+  {
     h += '<div class="hbar-list">' + answered.map(function (r, i) {
       return '<div class="hbar-row"><div class="hbar-top"><span class="hbar-label">' + escHtml(r.purpose) + '</span><span class="hbar-value">' + fmtNum(r.orders) + ' ออเดอร์ · ' + pct(r.orders, d.answered) + '</span></div>'
         + '<div class="hbar-track"><div class="hbar-fill" style="width:' + Math.max(2, r.orders / max * 100).toFixed(1) + '%;background:' + PALETTE_[i % PALETTE_.length] + '"></div></div></div>';
     }).join('') + '</div>';
   }
   var tRev = 0;
-  d.rows.forEach(function (r) { tRev += r.revenue; });
+  answered.forEach(function (r) { tRev += r.revenue; });
   h += '<div class="table-scroll" style="margin-top:12px"><table class="data-table chili-table"><colgroup><col style="width:34%"><col style="width:18%"><col style="width:20%"><col style="width:28%"></colgroup>'
     + '<thead><tr><th>ซื้อสำหรับ</th><th>ออเดอร์</th><th>% ของที่ตอบ</th><th>ยอดขาย</th></tr></thead><tbody>'
-    + d.rows.map(function (r) {
-      var none = r.purpose === 'ไม่ได้ระบุ';
-      return '<tr' + (none ? ' class="chili-sub"' : '') + '><td>' + escHtml(none ? 'ไม่ได้ระบุ (ไม่ตอบ / ก่อนเริ่มถาม)' : r.purpose) + '</td><td>' + fmtNum(r.orders) + '</td><td>' + (none ? '-' : '<b style="color:#e65100">' + pct(r.orders, d.answered) + '</b>') + '</td><td>' + fmtMoney(r.revenue) + '</td></tr>';
+    + answered.map(function (r) {
+      return '<tr><td>' + escHtml(r.purpose) + '</td><td>' + fmtNum(r.orders) + '</td><td><b style="color:#e65100">' + pct(r.orders, d.answered) + '</b></td><td>' + fmtMoney(r.revenue) + '</td></tr>';
     }).join('')
-    + '<tr class="row-total"><td>รวม</td><td>' + fmtNum(d.total) + '</td><td>' + (d.answered ? '100%' : '-') + '</td><td>' + fmtMoney(tRev) + '</td></tr>'
+    + '<tr class="row-total"><td>รวม</td><td>' + fmtNum(d.answered) + '</td><td>100%</td><td>' + fmtMoney(tRev) + '</td></tr>'
     + '</tbody></table></div>';
   body.innerHTML = h;
 }
