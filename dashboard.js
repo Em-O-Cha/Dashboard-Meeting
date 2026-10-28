@@ -942,13 +942,18 @@ function renderChiliSize(cs) {
       + '<div style="font-size:24px;font-weight:700;color:' + fg + ';margin-top:4px">' + fmtNum(q) + ' กระปุก</div><div style="color:' + fg + ';font-size:14px">' + fmtMoney(a) + '</div>'
       + '<div style="color:' + fg + ';font-size:12.5px;margin-top:2px">' + p + ' ของจำนวน</div></div>';
   }
-  // ทุกตารางในรายงานนี้ใช้ 4 คอลัมน์ความกว้างเท่ากัน (แถวตรงกันทุกตาราง) · แถวสุดท้าย = แถวรวม
-  function ctable(head, rows, pctCol) {
+  // ทุกตารางในรายงานนี้ใช้ 4 คอลัมน์ความกว้างเท่ากัน (แถวตรงกันทุกตาราง)
+  // kinds (ถ้ามี) = ชนิดแต่ละแถว period / sub / total · ไม่มี = แถวสุดท้ายเป็นแถวรวม
+  function ctable(head, rows, pctCol, kinds) {
     var last = rows.length - 1;
+    var cls = function (j) {
+      var k = kinds ? kinds[j] : (j === last ? 'total' : '');
+      return k === 'total' ? ' class="row-total"' : k === 'period' ? ' class="chili-period"' : k === 'sub' ? ' class="chili-sub"' : '';
+    };
     return '<div class="table-scroll"><table class="data-table chili-table"><colgroup><col style="width:22%"><col style="width:28%"><col style="width:28%"><col style="width:22%"></colgroup>'
       + '<thead><tr>' + [0, 1, 2, 3].map(function (i) { return '<th>' + escHtml(head[i] || '') + '</th>'; }).join('') + '</tr></thead><tbody>'
       + rows.map(function (r, j) {
-        return '<tr' + (j === last ? ' class="row-total"' : '') + '>' + [0, 1, 2, 3].map(function (i) {
+        return '<tr' + cls(j) + '>' + [0, 1, 2, 3].map(function (i) {
           var x = r[i] == null ? '' : r[i];
           return '<td>' + (i === pctCol && x !== '' ? '<b style="color:#e65100">' + escHtml(x) + '</b>' : escHtml(x)) + '</td>';
         }).join('') + '</tr>';
@@ -971,14 +976,9 @@ function renderChiliSize(cs) {
       + ctable(['Ad', '230 ก.', '120 ก.'], sizeRows(cs.ads, 'ad'));
   }
   if (cs.launch) {
-    h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 เทียบช่วงเปิดตัว (นับจากวันที่ขายกระปุกแรก)</div>'
-      + ctable(cs.launch.head, cs.launch.rows, 3)
+    h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 เทียบช่วงเปิดตัว แยกตาม Ad (นับจากวันที่ขายกระปุกแรก)</div>'
+      + ctable(cs.launch.head, cs.launch.rows, 3, cs.launch.kinds)
       + '<div class="report-sub" style="margin-top:6px">' + escHtml(cs.launch.note) + '</div>';
-    if ((cs.launch.adRows || []).length) {
-      h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 ช่วงเปิดตัว แยกตาม Ad</div>'
-        + ctable(cs.launch.adHead, cs.launch.adRows, 3)
-        + '<div class="report-sub" style="margin-top:6px">นับวันที่ 1 ถึงวันเดียวกันของทั้งสองขนาด · (%) = สัดส่วนของ Ad นั้นในยอดขนาดนั้น</div>';
-    }
   }
   body.innerHTML = h;
 }
