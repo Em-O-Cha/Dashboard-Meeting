@@ -952,6 +952,10 @@ function renderChiliSize(cs) {
     + '<div class="report-sub" style="margin-bottom:12px">ยอดเงิน 120 ก. = ' + chiliPct_(cs.a120, cs.a230) + ' ของยอดพริกผัดทั้งหมด</div>'
     + '<div style="font-weight:700;margin:10px 0 6px">แยกตามรส</div>'
     + table('รส', (cs.flavors || []).map(function (f) { return [f.flavor, f.q120, f.q230]; }));
+  if ((cs.ads || []).length) {
+    h += '<div style="font-weight:700;margin:14px 0 6px">แยกตาม Ad (ช่วงวันที่ที่เลือก)</div>'
+      + table('Ad', cs.ads.map(function (a) { return [a.ad, a.q120, a.q230]; }));
+  }
   if ((cs.weeks || []).length) {
     h += '<div style="font-weight:700;margin:14px 0 6px">แนวโน้มรายสัปดาห์ (% 120 ก. จากจำนวนกระปุก)</div><div class="hbar-list">'
       + cs.weeks.map(function (w) { var t = w.q120 + w.q230, pc = t ? w.q120 / t * 100 : 0;
@@ -964,6 +968,13 @@ function renderChiliSize(cs) {
       + '<div class="table-scroll"><table class="data-table"><thead><tr>' + cs.launch.head.map(function (x) { return '<th>' + escHtml(x) + '</th>'; }).join('') + '</tr></thead><tbody>'
       + cs.launch.rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td>' + (i === 3 ? '<b style="color:#e65100">' + escHtml(x) + '</b>' : escHtml(x)) + '</td>'; }).join('') + '</tr>'; }).join('')
       + '</tbody></table></div><div class="report-sub" style="margin-top:6px">' + escHtml(cs.launch.note) + '</div>';
+    if ((cs.launch.adRows || []).length) {
+      var last = cs.launch.adRows.length - 1;
+      h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 ช่วงเปิดตัว แยกตาม Ad</div>'
+        + '<div class="table-scroll"><table class="data-table"><thead><tr>' + cs.launch.adHead.map(function (x) { return '<th>' + escHtml(x) + '</th>'; }).join('') + '</tr></thead><tbody>'
+        + cs.launch.adRows.map(function (r, j) { return '<tr' + (j === last ? ' class="row-total"' : '') + '>' + r.map(function (x, i) { return '<td>' + (i === 3 ? '<b style="color:#e65100">' + escHtml(x) + '</b>' : escHtml(x)) + '</td>'; }).join('') + '</tr>'; }).join('')
+        + '</tbody></table></div><div class="report-sub" style="margin-top:6px">นับวันที่ 1 ถึงวันเดียวกันของทั้งสองขนาด · (%) = สัดส่วนของ Ad นั้นในยอดขนาดนั้น</div>';
+    }
   }
   body.innerHTML = h;
 }
