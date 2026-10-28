@@ -942,31 +942,42 @@ function renderChiliSize(cs) {
       + '<div style="font-size:24px;font-weight:700;color:' + fg + ';margin-top:4px">' + fmtNum(q) + ' กระปุก</div><div style="color:' + fg + ';font-size:14px">' + fmtMoney(a) + '</div>'
       + '<div style="color:' + fg + ';font-size:12.5px;margin-top:2px">' + p + ' ของจำนวน</div></div>';
   }
-  function table(head, rows) {
-    return '<div class="table-scroll"><table class="data-table"><thead><tr><th>' + head + '</th><th>120 ก.</th><th>230 ก.</th><th>% 120 ก.</th></tr></thead><tbody>'
-      + rows.map(function (r) { return '<tr><td>' + escHtml(r[0]) + '</td><td>' + fmtNum(r[1]) + '</td><td>' + fmtNum(r[2]) + '</td><td><b style="color:#e65100">' + chiliPct_(r[1], r[2]) + '</b></td></tr>'; }).join('')
-      + '</tbody></table></div>';
+  // ทุกตารางในรายงานนี้ใช้ 4 คอลัมน์ความกว้างเท่ากัน (แถวตรงกันทุกตาราง) · แถวสุดท้าย = แถวรวม
+  function ctable(head, rows, pctCol) {
+    var last = rows.length - 1;
+    return '<div class="table-scroll"><table class="data-table chili-table"><colgroup><col style="width:22%"><col style="width:28%"><col style="width:28%"><col style="width:22%"></colgroup>'
+      + '<thead><tr>' + [0, 1, 2, 3].map(function (i) { return '<th>' + escHtml(head[i] || '') + '</th>'; }).join('') + '</tr></thead><tbody>'
+      + rows.map(function (r, j) {
+        return '<tr' + (j === last ? ' class="row-total"' : '') + '>' + [0, 1, 2, 3].map(function (i) {
+          var x = r[i] == null ? '' : r[i];
+          return '<td>' + (i === pctCol && x !== '' ? '<b style="color:#e65100">' + escHtml(x) + '</b>' : escHtml(x)) + '</td>';
+        }).join('') + '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+  // ลำดับคอลัมน์ 230 ก. ก่อน 120 ก. ให้ตรงกับตารางช่วงเปิดตัวด้านล่าง
+  function sizeRows(list, key) {
+    var t120 = 0, t230 = 0;
+    var rows = list.map(function (x) { t120 += x.q120; t230 += x.q230; return [x[key], fmtNum(x.q230), fmtNum(x.q120)]; });
+    rows.push(['รวม', fmtNum(t230), fmtNum(t120)]);
+    return rows;
   }
   var h = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0">' + kpi('🆕 120 กรัม', cs.q120, cs.a120, chiliPct_(cs.q120, cs.q230), '#fff3e0', '#e65100') + kpi('230 กรัม', cs.q230, cs.a230, chiliPct_(cs.q230, cs.q120), '#ffebee', '#c62828') + '</div>'
     + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0;background:#eee">' + (cs.q120 ? '<div style="flex:' + cs.q120 + ';background:#fb8c00"></div>' : '') + (cs.q230 ? '<div style="flex:' + cs.q230 + ';background:#c62828"></div>' : '') + '</div>'
     + '<div class="report-sub" style="margin-bottom:12px">ยอดเงิน 120 ก. = ' + chiliPct_(cs.a120, cs.a230) + ' ของยอดพริกผัดทั้งหมด</div>'
-    + '<div style="font-weight:700;margin:10px 0 6px">แยกตามรส</div>'
-    + table('รส', (cs.flavors || []).map(function (f) { return [f.flavor, f.q120, f.q230]; }));
+    + '<div style="font-weight:700;margin:10px 0 6px">แยกตามรส (กระปุก)</div>'
+    + ctable(['รส', '230 ก.', '120 ก.'], sizeRows(cs.flavors || [], 'flavor'));
   if ((cs.ads || []).length) {
-    h += '<div style="font-weight:700;margin:14px 0 6px">แยกตาม Ad</div>'
-      + table('Ad', cs.ads.map(function (a) { return [a.ad, a.q120, a.q230]; }));
+    h += '<div style="font-weight:700;margin:14px 0 6px">แยกตาม Ad (กระปุก)</div>'
+      + ctable(['Ad', '230 ก.', '120 ก.'], sizeRows(cs.ads, 'ad'));
   }
   if (cs.launch) {
     h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 เทียบช่วงเปิดตัว (นับจากวันที่ขายกระปุกแรก)</div>'
-      + '<div class="table-scroll"><table class="data-table"><thead><tr>' + cs.launch.head.map(function (x) { return '<th>' + escHtml(x) + '</th>'; }).join('') + '</tr></thead><tbody>'
-      + cs.launch.rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td>' + (i === 3 ? '<b style="color:#e65100">' + escHtml(x) + '</b>' : escHtml(x)) + '</td>'; }).join('') + '</tr>'; }).join('')
-      + '</tbody></table></div><div class="report-sub" style="margin-top:6px">' + escHtml(cs.launch.note) + '</div>';
+      + ctable(cs.launch.head, cs.launch.rows, 3)
+      + '<div class="report-sub" style="margin-top:6px">' + escHtml(cs.launch.note) + '</div>';
     if ((cs.launch.adRows || []).length) {
-      var last = cs.launch.adRows.length - 1;
       h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 ช่วงเปิดตัว แยกตาม Ad</div>'
-        + '<div class="table-scroll"><table class="data-table"><thead><tr>' + cs.launch.adHead.map(function (x) { return '<th>' + escHtml(x) + '</th>'; }).join('') + '</tr></thead><tbody>'
-        + cs.launch.adRows.map(function (r, j) { return '<tr' + (j === last ? ' class="row-total"' : '') + '>' + r.map(function (x, i) { return '<td>' + (i === 3 ? '<b style="color:#e65100">' + escHtml(x) + '</b>' : escHtml(x)) + '</td>'; }).join('') + '</tr>'; }).join('')
-        + '</tbody></table></div><div class="report-sub" style="margin-top:6px">นับวันที่ 1 ถึงวันเดียวกันของทั้งสองขนาด · (%) = สัดส่วนของ Ad นั้นในยอดขนาดนั้น</div>';
+        + ctable(cs.launch.adHead, cs.launch.adRows, 3)
+        + '<div class="report-sub" style="margin-top:6px">นับวันที่ 1 ถึงวันเดียวกันของทั้งสองขนาด · (%) = สัดส่วนของ Ad นั้นในยอดขนาดนั้น</div>';
     }
   }
   body.innerHTML = h;
