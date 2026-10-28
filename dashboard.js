@@ -936,7 +936,7 @@ function chiliPct_(a, b) { return a + b ? (Math.round(a * 1000 / (a + b)) / 10) 
 function renderChiliSize(cs) {
   var body = document.getElementById('chiliSize-body');
   if (!cs) { body.innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
-  if (!(cs.q120 + cs.q230)) { body.innerHTML = '<div class="empty-note">ไม่มียอดขายพริกผัดในช่วงวันที่นี้</div>'; return; }
+  if (!(cs.q120 + cs.q230)) { body.innerHTML = '<div class="empty-note">ยังไม่มียอดขายพริกผัด</div>'; return; }
   function kpi(lbl, q, a, p, bg, fg) {
     return '<div style="flex:1;min-width:140px;background:' + bg + ';border-radius:12px;padding:12px 14px"><div style="font-weight:700;color:' + fg + ';font-size:14px">' + lbl + '</div>'
       + '<div style="font-size:24px;font-weight:700;color:' + fg + ';margin-top:4px">' + fmtNum(q) + ' กระปุก</div><div style="color:' + fg + ';font-size:14px">' + fmtMoney(a) + '</div>'
@@ -953,15 +953,8 @@ function renderChiliSize(cs) {
     + '<div style="font-weight:700;margin:10px 0 6px">แยกตามรส</div>'
     + table('รส', (cs.flavors || []).map(function (f) { return [f.flavor, f.q120, f.q230]; }));
   if ((cs.ads || []).length) {
-    h += '<div style="font-weight:700;margin:14px 0 6px">แยกตาม Ad (ช่วงวันที่ที่เลือก)</div>'
+    h += '<div style="font-weight:700;margin:14px 0 6px">แยกตาม Ad</div>'
       + table('Ad', cs.ads.map(function (a) { return [a.ad, a.q120, a.q230]; }));
-  }
-  if ((cs.weeks || []).length) {
-    h += '<div style="font-weight:700;margin:14px 0 6px">แนวโน้มรายสัปดาห์ (% 120 ก. จากจำนวนกระปุก)</div><div class="hbar-list">'
-      + cs.weeks.map(function (w) { var t = w.q120 + w.q230, pc = t ? w.q120 / t * 100 : 0;
-        return '<div class="hbar-row"><div class="hbar-top"><span class="hbar-label">' + escHtml(w.label) + '</span><span class="hbar-value">' + chiliPct_(w.q120, w.q230) + '</span></div>'
-          + '<div class="hbar-track"><div class="hbar-fill" style="width:' + Math.max(pc ? 2 : 0, pc).toFixed(1) + '%;background:#fb8c00"></div></div></div>'; }).join('')
-      + '</div>' + table('สัปดาห์', cs.weeks.map(function (w) { return [w.label, w.q120, w.q230]; }));
   }
   if (cs.launch) {
     h += '<div style="font-weight:700;margin:14px 0 6px;color:#e65100">🚀 เทียบช่วงเปิดตัว (นับจากวันที่ขายกระปุกแรก)</div>'
