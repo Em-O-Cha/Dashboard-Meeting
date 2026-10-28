@@ -24,6 +24,7 @@ var REPORT_TITLES = {
   productGroups: 'สินค้าที่ขายได้ (จัดกลุ่มด้วย Keyword)',
   bestSellers: 'สินค้าขายดี Top 10',
   chiliSize: 'พริกผัดน้ำมัน 120 ก. เทียบ 230 ก. (% จากจำนวนกระปุก)',
+  purpose: 'ซื้อครั้งนี้สำหรับ (ลูกค้า LINE Shop)',
   bestSellersByAd: 'สินค้าขายดี Top 10 แยกตาม Ad',
   byAd: 'ยอดขายแต่ละ Ad',
   adShare: 'สัดส่วนการขายแต่ละ Ad',
@@ -39,7 +40,7 @@ var REPORT_TITLES = {
 };
 
 var NAV_SECTIONS = [
-  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'], ['chiliSize', '5.1 พริกผัด 120 ก.'],
+  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'], ['chiliSize', '5.1 พริกผัด 120 ก.'], ['purpose', '5.2 ซื้อครั้งนี้สำหรับ'],
   ['bestSellersByAd', '6. ขายดีแยก Ad'], ['byAd', '7. ยอดขายแต่ละ Ad'], ['adShare', '8. สัดส่วนการขาย'], ['timeSlots', '9. ช่วงเวลาขายดี'],
   ['customers', '10. ลูกค้าใหม่/ซื้อซ้ำ'],
   ['signups', '11. สมาชิกใหม่'], ['membersGen', '12. Gen สมาชิก'], ['provinceRegion', '13. จังหวัด/ภูมิภาค'],
@@ -193,7 +194,7 @@ function buildNavTabs() {
 
 // ==================== Load & render all reports ====================
 
-var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'chiliSize', 'bestSellersByAd', 'byAd', 'adShare', 'timeSlots', 'campaigns'];
+var DATE_DEPENDENT_KEYS_ = ['overview', 'productGroups', 'bestSellers', 'chiliSize', 'purpose', 'bestSellersByAd', 'byAd', 'adShare', 'timeSlots', 'campaigns'];
 
 function setSectionLoading_(keys) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="empty-note">กำลังโหลด...</div>'; }); }
 function showSectionError_(keys, msg) { keys.forEach(function (k) { var el = document.getElementById(k + '-body'); if (el) el.innerHTML = '<div class="error-note">โหลดข้อมูลไม่สำเร็จ: ' + escHtml(msg || '') + '</div>'; }); }
@@ -220,6 +221,7 @@ function loadAll() {
     renderProductGroups(r.productGroups);
     renderBestSellers(r.productGroups);
     renderChiliSize(r.chiliSize);
+    renderPurpose(r.purpose);
     renderBestSellersByAd(r.byAd, r.productQtyByAd);
     renderByAd(r.byAd);
     renderAdShare(r.byAd, r.productQtyByAd);
@@ -983,6 +985,34 @@ function renderChiliSize(cs) {
   body.innerHTML = h;
 }
 
+// ⚡ (28/10/69) 5.2 ซื้อครั้งนี้สำหรับ — ลูกค้า LINE Shop ตอบตอนสั่งซื้อ (ตามช่วงวันที่ที่เลือก)
+function renderPurpose(d) {
+  var body = document.getElementById('purpose-body');
+  if (!d) { body.innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
+  if (!d.total) { body.innerHTML = '<div class="empty-note">ไม่มีออเดอร์ LINE Shop ในช่วงวันที่นี้</div>'; return; }
+  var answered = d.rows.filter(function (r) { return r.purpose !== 'ไม่ได้ระบุ'; });
+  var max = Math.max.apply(null, answered.map(function (r) { return r.orders; }).concat([1]));
+  var pct = function (n, t) { return t ? (Math.round(n * 1000 / t) / 10) + '%' : '-'; };
+  var h = '<div class="report-sub" style="margin-bottom:8px">ลูกค้าตอบ ' + fmtNum(d.answered) + ' จาก ' + fmtNum(d.total) + ' ออเดอร์ (' + pct(d.answered, d.total) + ')</div>';
+  if (answered.length) {
+    h += '<div class="hbar-list">' + answered.map(function (r, i) {
+      return '<div class="hbar-row"><div class="hbar-top"><span class="hbar-label">' + escHtml(r.purpose) + '</span><span class="hbar-value">' + fmtNum(r.orders) + ' ออเดอร์ · ' + pct(r.orders, d.answered) + '</span></div>'
+        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + Math.max(2, r.orders / max * 100).toFixed(1) + '%;background:' + PALETTE_[i % PALETTE_.length] + '"></div></div></div>';
+    }).join('') + '</div>';
+  }
+  var tRev = 0;
+  d.rows.forEach(function (r) { tRev += r.revenue; });
+  h += '<div class="table-scroll" style="margin-top:12px"><table class="data-table chili-table"><colgroup><col style="width:34%"><col style="width:18%"><col style="width:20%"><col style="width:28%"></colgroup>'
+    + '<thead><tr><th>ซื้อสำหรับ</th><th>ออเดอร์</th><th>% ของที่ตอบ</th><th>ยอดขาย</th></tr></thead><tbody>'
+    + d.rows.map(function (r) {
+      var none = r.purpose === 'ไม่ได้ระบุ';
+      return '<tr' + (none ? ' class="chili-sub"' : '') + '><td>' + escHtml(none ? 'ไม่ได้ระบุ (ไม่ตอบ / ก่อนเริ่มถาม)' : r.purpose) + '</td><td>' + fmtNum(r.orders) + '</td><td>' + (none ? '-' : '<b style="color:#e65100">' + pct(r.orders, d.answered) + '</b>') + '</td><td>' + fmtMoney(r.revenue) + '</td></tr>';
+    }).join('')
+    + '<tr class="row-total"><td>รวม</td><td>' + fmtNum(d.total) + '</td><td>' + (d.answered ? '100%' : '-') + '</td><td>' + fmtMoney(tRev) + '</td></tr>'
+    + '</tbody></table></div>';
+  body.innerHTML = h;
+}
+
 function renderCampaigns(list) {
   var body = document.getElementById('campaigns-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
@@ -1086,6 +1116,7 @@ function getReportDataFor_(key) {
     case 'bestSellers': return (lastDashboardData.productGroups || []).slice(0, 10);
     case 'bestSellersByAd': return lastDashboardData.productQtyByAd;
     case 'chiliSize': return lastDashboardData.chiliSize;
+    case 'purpose': return lastDashboardData.purpose;
     case 'byAd': return lastDashboardData.byAd;
     case 'adShare': return lastDashboardData.byAd;
     case 'timeSlots': return lastDashboardData.timeSlots;
