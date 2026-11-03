@@ -935,12 +935,22 @@ function renderDecliningProducts(data) {
 
 // ⚡ (27/10/69) พริกผัดน้ำมัน 120 ก. เทียบ 230 ก. (backend: reportChiliSize_ ใน DashboardApi.gs)
 function chiliPct_(a, b) { return a + b ? (Math.round(a * 1000 / (a + b)) / 10) + '%' : '-'; }
+// ⚡ (3/11/69) 2 กล่องเพิ่ม: 120 ก. / 230 ก. เฉพาะช่วงวันที่ที่เลือกด้านบน (เช่น สัปดาห์ที่ประชุม)
+function chiliRangeBoxes_(r, kpi) {
+  if (!r) return '';
+  var label = r.from && r.to ? formatThaiDateRange_(r.from, r.to) : 'ช่วงวันที่ที่เลือก';
+  var h = '<div style="font-weight:700;margin:14px 0 2px;color:#1565c0">📅 ช่วงวันที่ที่เลือก: ' + escHtml(label) + '</div>';
+  if (!(r.q120 + r.q230)) return h + '<div class="empty-note" style="margin-bottom:12px">ไม่มียอดขายพริกผัดในช่วงนี้</div>';
+  return h + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 14px">'
+    + kpi('🆕 120 กรัม', r.q120, r.a120, chiliPct_(r.q120, r.q230), '#e3f2fd', '#1565c0')
+    + kpi('230 กรัม', r.q230, r.a230, chiliPct_(r.q230, r.q120), '#e8f5e9', '#2e7d32') + '</div>';
+}
 function renderChiliSize(cs) {
   var body = document.getElementById('chiliSize-body');
   if (!cs) { body.innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
   if (!(cs.q120 + cs.q230)) { body.innerHTML = '<div class="empty-note">ยังไม่มียอดขายพริกผัด</div>'; return; }
-  function kpi(lbl, q, a, p, bg, fg) {
-    return '<div style="flex:1;min-width:140px;background:' + bg + ';border-radius:12px;padding:12px 14px"><div style="font-weight:700;color:' + fg + ';font-size:14px">' + lbl + '</div>'
+  function kpi(lbl, q, a, p, bg, fg, border) {
+    return '<div style="flex:1;min-width:140px;background:' + bg + ';border-radius:12px;padding:12px 14px' + (border ? ';border:' + border : '') + '"><div style="font-weight:700;color:' + fg + ';font-size:14px">' + lbl + '</div>'
       + '<div style="font-size:24px;font-weight:700;color:' + fg + ';margin-top:4px">' + fmtNum(q) + ' กระปุก</div><div style="color:' + fg + ';font-size:14px">' + fmtMoney(a) + '</div>'
       + '<div style="color:' + fg + ';font-size:12.5px;margin-top:2px">' + p + ' ของจำนวน</div></div>';
   }
@@ -971,6 +981,7 @@ function renderChiliSize(cs) {
   var h = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0">' + kpi('🆕 120 กรัม', cs.q120, cs.a120, chiliPct_(cs.q120, cs.q230), '#fff3e0', '#e65100') + kpi('230 กรัม', cs.q230, cs.a230, chiliPct_(cs.q230, cs.q120), '#ffebee', '#c62828') + '</div>'
     + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0;background:#eee">' + (cs.q120 ? '<div style="flex:' + cs.q120 + ';background:#fb8c00"></div>' : '') + (cs.q230 ? '<div style="flex:' + cs.q230 + ';background:#c62828"></div>' : '') + '</div>'
     + '<div class="report-sub" style="margin-bottom:12px">ยอดเงิน 120 ก. = ' + chiliPct_(cs.a120, cs.a230) + ' ของยอดพริกผัดทั้งหมด</div>'
+    + chiliRangeBoxes_(cs.range, kpi)
     + '<div style="font-weight:700;margin:10px 0 6px">แยกตามรส (กระปุก)</div>'
     + ctable(['รส', '230 ก.', '120 ก.'], sizeRows(cs.flavors || [], 'flavor'));
   if ((cs.ads || []).length) {
