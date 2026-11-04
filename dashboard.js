@@ -26,6 +26,7 @@ var REPORT_TITLES = {
   chiliSize: 'พริกผัดน้ำมัน 120 ก. เทียบ 230 ก. (% จากจำนวนกระปุก)',
   purpose: 'ซื้อครั้งนี้สำหรับ (ลูกค้า LINE Shop)',
   loyaltySurvey: 'แบบสอบถามลูกค้า 7-Eleven (ตอนส่งใบเสร็จสะสมคะแนน)',
+  lineFriends: 'เพื่อน LINE OA (ใช้งานล่าสุด / บล็อก)',
   bestSellersByAd: 'สินค้าขายดี Top 10 แยกตาม Ad',
   byAd: 'ยอดขายแต่ละ Ad',
   adShare: 'สัดส่วนการขายแต่ละ Ad',
@@ -44,7 +45,7 @@ var NAV_SECTIONS = [
   ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'], ['chiliSize', '5.1 พริกผัด 120 ก.'], ['purpose', '5.2 ซื้อครั้งนี้สำหรับ'], ['loyaltySurvey', '5.3 แบบสอบถาม 7-Eleven'],
   ['bestSellersByAd', '6. ขายดีแยก Ad'], ['byAd', '7. ยอดขายแต่ละ Ad'], ['adShare', '8. สัดส่วนการขาย'], ['timeSlots', '9. ช่วงเวลาขายดี'],
   ['customers', '10. ลูกค้าใหม่/ซื้อซ้ำ'],
-  ['signups', '11. สมาชิกใหม่'], ['membersGen', '12. Gen สมาชิก'], ['provinceRegion', '13. จังหวัด/ภูมิภาค'],
+  ['signups', '11. สมาชิกใหม่'], ['membersGen', '12. Gen สมาชิก'], ['lineFriends', '12.1 เพื่อน LINE OA'], ['provinceRegion', '13. จังหวัด/ภูมิภาค'],
   ['decliningProducts', '14. สินค้าขาลง'], ['campaigns', '15. โปรโมชั่น'], ['aiAll', '16. AI ภาพรวม']
 ];
 
@@ -224,6 +225,7 @@ function loadAll() {
     renderChiliSize(r.chiliSize);
     renderPurpose(r.purpose);
     renderLoyaltySurvey(r.loyaltySurvey);
+    renderLineFriends(r.lineFriends);
     renderBestSellersByAd(r.byAd, r.productQtyByAd);
     renderByAd(r.byAd);
     renderAdShare(r.byAd, r.productQtyByAd);
@@ -998,6 +1000,34 @@ function renderChiliSize(cs) {
   body.innerHTML = h;
 }
 
+// ⚡ (4/11/69) 12.1 เพื่อน LINE OA — ผังเดียวกับแท็บ "👥 เพื่อน LINE OA" ในหน้าจัดการสมาชิก
+function renderLineFriends(d) {
+  var body = document.getElementById('lineFriends-body');
+  if (!body) return;
+  if (!d) { body.innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
+  if (d.error) { body.innerHTML = '<div class="empty-note">' + escHtml(d.error) + '</div>'; return; }
+  var pct = function (x, of) { return of ? Math.round(x * 100 / of) + '%' : ''; };
+  var row = function (lv, bar, label, sub, num, color, of) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eee;' + (lv === 2 ? 'margin-left:14px;border-left:4px solid ' + bar + ';' : 'font-weight:700;') + '">'
+      + '<div style="flex:1"><div style="font-size:' + (lv === 1 ? '15' : '14') + 'px">' + label + '</div>' + (sub ? '<div style="font-size:11.5px;color:#888">' + sub + '</div>' : '') + '</div>'
+      + '<div style="font-size:18px;font-weight:700;color:' + color + ';min-width:64px;text-align:right">' + fmtNum(num) + '</div>'
+      + '<div style="width:44px;text-align:right;font-size:12px;color:#777">' + (of ? pct(num, of) : '') + '</div></div>';
+  };
+  var G = '#c8e6c9', R = '#ffcdd2';
+  var h = '<div class="report-sub" style="margin-bottom:8px">เช็คกับ LINE ล่าสุด ' + escHtml(d.lastCheck || '-') + ' (อัปเดตอัตโนมัติทุกวันตี 3)</div>'
+    + '<div style="border:1px solid #eee;border-radius:12px;overflow:hidden">'
+    + row(1, '', '✅ ยังเป็นเพื่อน', 'ตรงกับตัวเลขในแอป LINE OA', d.friend, '#2e7d32', 0)
+    + row(2, G, '💬 ใช้งานใน 30 วัน', '', d.active, '#1565c0', d.friend)
+    + row(2, G, '🕐 ใช้งานล่าสุด 31–90 วัน', '', d.mid, '#1565c0', d.friend)
+    + row(2, G, '😴 เงียบเกิน 90 วัน', 'เคยใช้งาน แต่หายไปนาน', d.quiet, '#ef6c00', d.friend)
+    + row(2, G, '👀 เพิ่มเพื่อนไว้เฉย ๆ', 'ยังไม่เคยทักแชท (ตั้งแต่ 22 ต.ค. 69) / ซื้อ / ใช้แต้ม', d.none, '#757575', d.friend)
+    + row(1, '', '🚫 บล็อกแล้ว', '', d.blocked, '#c62828', 0)
+    + row(2, R, '⭐ สมาชิก', '', d.blockedMember, '#c62828', d.blocked)
+    + row(2, R, '👤 ไม่ใช่สมาชิก (เคยทักแชท)', '', d.blockedNon, '#c62828', d.blocked)
+    + '</div><div class="report-sub" style="margin-top:6px">% คิดจากแถวแม่ · ใช้งาน = ทักแชท / สั่งซื้อ / ใช้แต้ม (ล่าสุด) · บล็อก = เฉพาะคนที่รู้ชื่อ (เริ่มเก็บ 22 ต.ค. 69) · ดูรายชื่อได้ที่หน้าจัดการสมาชิก</div>';
+  body.innerHTML = h;
+}
+
 // ⚡ (4/11/69) 5.3 แบบสอบถาม 7-Eleven — ยอดรวมทั้งหมด (ไม่ขึ้นกับช่วงวันที่) จากแท็บ Loyalty_Survey_Report ที่ Members LINE อัปเดตทุก ~10 นาที
 var SURVEY_COLORS_ = ['#00B894', '#0984E3', '#6C5CE7', '#E17055', '#E84393', '#00838f'];
 function renderLoyaltySurvey(d) {
@@ -1161,6 +1191,7 @@ function getReportDataFor_(key) {
     case 'chiliSize': return lastDashboardData.chiliSize;
     case 'purpose': return lastDashboardData.purpose;
     case 'loyaltySurvey': return lastDashboardData.loyaltySurvey;
+    case 'lineFriends': return lastDashboardData.lineFriends;
     case 'byAd': return lastDashboardData.byAd;
     case 'adShare': return lastDashboardData.byAd;
     case 'timeSlots': return lastDashboardData.timeSlots;
