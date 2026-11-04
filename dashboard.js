@@ -25,6 +25,7 @@ var REPORT_TITLES = {
   bestSellers: 'สินค้าขายดี Top 10',
   chiliSize: 'พริกผัดน้ำมัน 120 ก. เทียบ 230 ก. (% จากจำนวนกระปุก)',
   purpose: 'ซื้อครั้งนี้สำหรับ (ลูกค้า LINE Shop)',
+  loyaltySurvey: 'แบบสอบถามลูกค้า 7-Eleven (ตอนส่งใบเสร็จสะสมคะแนน)',
   bestSellersByAd: 'สินค้าขายดี Top 10 แยกตาม Ad',
   byAd: 'ยอดขายแต่ละ Ad',
   adShare: 'สัดส่วนการขายแต่ละ Ad',
@@ -40,7 +41,7 @@ var REPORT_TITLES = {
 };
 
 var NAV_SECTIONS = [
-  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'], ['chiliSize', '5.1 พริกผัด 120 ก.'], ['purpose', '5.2 ซื้อครั้งนี้สำหรับ'],
+  ['overview', '1. ยอดขายรวม'], ['targets', '2. เป้าหมาย'], ['monthlyTrend', '3. ยอดขายรายเดือน'], ['productGroups', '4. สินค้าที่ขายได้'], ['bestSellers', '5. สินค้าขายดี'], ['chiliSize', '5.1 พริกผัด 120 ก.'], ['purpose', '5.2 ซื้อครั้งนี้สำหรับ'], ['loyaltySurvey', '5.3 แบบสอบถาม 7-Eleven'],
   ['bestSellersByAd', '6. ขายดีแยก Ad'], ['byAd', '7. ยอดขายแต่ละ Ad'], ['adShare', '8. สัดส่วนการขาย'], ['timeSlots', '9. ช่วงเวลาขายดี'],
   ['customers', '10. ลูกค้าใหม่/ซื้อซ้ำ'],
   ['signups', '11. สมาชิกใหม่'], ['membersGen', '12. Gen สมาชิก'], ['provinceRegion', '13. จังหวัด/ภูมิภาค'],
@@ -222,6 +223,7 @@ function loadAll() {
     renderBestSellers(r.productGroups);
     renderChiliSize(r.chiliSize);
     renderPurpose(r.purpose);
+    renderLoyaltySurvey(r.loyaltySurvey);
     renderBestSellersByAd(r.byAd, r.productQtyByAd);
     renderByAd(r.byAd);
     renderAdShare(r.byAd, r.productQtyByAd);
@@ -996,6 +998,36 @@ function renderChiliSize(cs) {
   body.innerHTML = h;
 }
 
+// ⚡ (4/11/69) 5.3 แบบสอบถาม 7-Eleven — ยอดรวมทั้งหมด (ไม่ขึ้นกับช่วงวันที่) จากแท็บ Loyalty_Survey_Report ที่ Members LINE อัปเดตทุก ~10 นาที
+var SURVEY_COLORS_ = ['#00B894', '#0984E3', '#6C5CE7', '#E17055', '#E84393', '#00838f'];
+function renderLoyaltySurvey(d) {
+  var body = document.getElementById('loyaltySurvey-body');
+  if (!body) return;
+  if (!d) { body.innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
+  if (d.error) { body.innerHTML = '<div class="empty-note">' + escHtml(d.error) + '</div>'; return; }
+  var st = d.stats || {}, n = Number(d.respondents) || 0, summary = d.summary || {};
+  var tile = function (v, l) { return '<div style="flex:1;min-width:110px;text-align:center"><div style="font-size:24px;font-weight:700">' + v + '</div><div style="font-size:12.5px;opacity:.9">' + l + '</div></div>'; };
+  var h = '<div style="background:linear-gradient(135deg,#00B894,#0984E3);color:#fff;border-radius:14px;padding:14px 16px;margin:6px 0 14px">'
+    + '<div style="font-size:13px;opacity:.95;margin-bottom:8px">ข้อมูล ณ ' + escHtml(d.updatedAt || '-') + ' · ผู้ตอบ ' + fmtNum(n) + ' คน</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.15);border-radius:12px;padding:10px 6px">'
+    + tile(fmtNum(st.total || 0), 'ใบเสร็จ') + tile(fmtNum(st.approved || 0), 'อนุมัติ') + tile(fmtNum(st.pointsGiven || 0), 'คะแนนที่ให้') + tile(fmtMoney(st.emochaAmount || 0), 'ยอดเอมโอชา')
+    + '</div></div>';
+  (d.survey || []).forEach(function (q, qi) {
+    var answers = (summary[q.id] || []).slice().sort(function (a, b) { return b.count - a.count; });
+    var total = answers.reduce(function (t, a) { return t + a.count; }, 0);
+    var multi = q.type === 'multi', base = multi ? n : total, color = SURVEY_COLORS_[qi % SURVEY_COLORS_.length];
+    h += '<div style="font-weight:700;margin:14px 0 2px">' + (qi + 1) + '. ' + escHtml(q.q) + '</div>'
+      + '<div class="report-sub" style="margin-bottom:8px">' + (multi ? 'ตอบได้หลายข้อ · % ของผู้ตอบ ' + fmtNum(n) + ' คน' : 'ผู้ตอบ ' + fmtNum(total) + ' คน') + '</div>';
+    if (!answers.length) { h += '<div class="empty-note">ยังไม่มีคำตอบ</div>'; return; }
+    h += '<div class="hbar-list">' + answers.map(function (a) {
+      var pct = base ? Math.round(a.count / base * 100) : 0;
+      return '<div class="hbar-row"><div class="hbar-top"><span class="hbar-label">' + escHtml(a.answer) + '</span><span class="hbar-value" style="color:' + color + ';font-weight:700">' + fmtNum(a.count) + ' (' + pct + '%)</span></div>'
+        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + Math.max(2, pct) + '%;background:' + color + '"></div></div></div>';
+    }).join('') + '</div>';
+  });
+  body.innerHTML = h;
+}
+
 // ⚡ (28/10/69) 5.2 ซื้อครั้งนี้สำหรับ — ลูกค้า LINE Shop ตอบตอนสั่งซื้อ (ตามช่วงวันที่ที่เลือก)
 function renderPurpose(d) {
   var body = document.getElementById('purpose-body');
@@ -1128,6 +1160,7 @@ function getReportDataFor_(key) {
     case 'bestSellersByAd': return lastDashboardData.productQtyByAd;
     case 'chiliSize': return lastDashboardData.chiliSize;
     case 'purpose': return lastDashboardData.purpose;
+    case 'loyaltySurvey': return lastDashboardData.loyaltySurvey;
     case 'byAd': return lastDashboardData.byAd;
     case 'adShare': return lastDashboardData.byAd;
     case 'timeSlots': return lastDashboardData.timeSlots;
