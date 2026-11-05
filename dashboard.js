@@ -37,7 +37,8 @@ var REPORT_TITLES = {
   signups: 'สมาชิกใหม่รายสัปดาห์',
   membersGen: 'สมาชิก LINE แบ่งตาม Gen',
   provinceRegion: 'จังหวัด/ภูมิภาคที่ซื้อเรา',
-  decliningProducts: 'สินค้าที่จำนวนออเดอร์กำลังลดลง Top 10',
+  decliningProducts: 'สินค้าที่ยอดขายกำลังลดลง Top 10',
+  decliningOrders: 'สินค้าที่จำนวนออเดอร์กำลังลดลง Top 10',
   campaigns: 'โปรโมชั่น'
 };
 
@@ -46,7 +47,7 @@ var NAV_SECTIONS = [
   ['bestSellersByAd', '6. ขายดีแยก Ad'], ['byAd', '7. ยอดขายแต่ละ Ad'], ['adShare', '8. สัดส่วนการขาย'], ['timeSlots', '9. ช่วงเวลาขายดี'],
   ['customers', '10. ลูกค้าใหม่/ซื้อซ้ำ'],
   ['signups', '11. สมาชิกใหม่'], ['membersGen', '12. Gen สมาชิก'], ['lineFriends', '12.1 เพื่อน LINE OA'], ['provinceRegion', '13. จังหวัด/ภูมิภาค'],
-  ['decliningProducts', '14. สินค้าขาลง'], ['campaigns', '15. โปรโมชั่น'], ['aiAll', '16. AI ภาพรวม']
+  ['decliningProducts', '14. สินค้าขาลง'], ['decliningOrders', '14.1 ขาลง (ออเดอร์)'], ['campaigns', '15. โปรโมชั่น'], ['aiAll', '16. AI ภาพรวม']
 ];
 
 // ==================== Utils ====================
@@ -209,7 +210,7 @@ function loadAll() {
   setSectionLoading_(['signups']);
   setSectionLoading_(['membersGen']);
   setSectionLoading_(['provinceRegion']);
-  setSectionLoading_(['decliningProducts']);
+  setSectionLoading_(['decliningProducts', 'decliningOrders']);
   setSectionLoading_(['monthlyTrend']);
 
   // Fire these one at a time, not all at once — Google Apps Script Web Apps can reject
@@ -264,9 +265,9 @@ function loadAll() {
     })
     .then(function () {
       return apiGet('getDecliningProducts', {}).then(function (r) {
-        if (!r || !r.success) { showSectionError_(['decliningProducts'], r ? r.error : ''); return; }
-        lastDecliningData = r; renderDecliningProducts(r);
-      }).catch(function (e) { showSectionError_(['decliningProducts'], e.message); });
+        if (!r || !r.success) { showSectionError_(['decliningProducts', 'decliningOrders'], r ? r.error : ''); return; }
+        lastDecliningData = r; renderDecliningProducts(r); renderDecliningOrders(r);
+      }).catch(function (e) { showSectionError_(['decliningProducts', 'decliningOrders'], e.message); });
     })
     .then(function () {
       return apiGet('getMonthlyTrend', {}).then(function (r) {
@@ -909,15 +910,18 @@ function renderProvinceReport(data) {
 
 // ==================== Report 12: Declining products ====================
 
-function renderDecliningProducts(data) {
-  var body = document.getElementById('decliningProducts-body');
-  var list = (data && data.declining) || [];
+// ข้อ 14 = ยอดขาย (บาท) · ⚡ (5/11/69) ข้อ 14.1 = จำนวนออเดอร์ที่มีสินค้านั้น (ไม่คิดมูลค่า) — ข้อมูลชุดเดียวกัน (getDecliningProducts)
+function renderDecliningProducts(data) { renderDeclineTable_(data, 'decliningProducts-body', (data && data.declining) || [], false); }
+function renderDecliningOrders(data) {
+  if (data && !data.note && !data.decliningOrders) { document.getElementById('decliningOrders-body').innerHTML = '<div class="empty-note">ยังไม่มีข้อมูล (รอ API รุ่นใหม่)</div>'; return; }
+  renderDeclineTable_(data, 'decliningOrders-body', (data && data.decliningOrders) || [], true);
+}
+function renderDeclineTable_(data, bodyId, list, byOrders) {
+  var body = document.getElementById(bodyId);
   if (data && data.note) { body.innerHTML = '<div class="info-note">' + escHtml(data.note) + '</div>'; return; }
   var monthKeys = data.completeMonthKeys || [];
   var lastLabel = monthKeyToThaiLabel_(monthKeys[monthKeys.length - 1]);
   var prevLabel = monthKeyToThaiLabel_(monthKeys[monthKeys.length - 2]);
-  // ⚡ (5/11/69) นับเป็นจำนวนออเดอร์ (ไม่คิดจากมูลค่า) — API รุ่นเก่ายังไม่มี metric ก็แสดงเป็นบาทแบบเดิม
-  var byOrders = data.metric === 'orders';
   var cell = function (m) { return byOrders ? fmtNum(m.orders || 0) + ' ออเดอร์' : fmtMoney(m.amount); };
   if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่' + (byOrders ? 'จำนวนออเดอร์' : 'ยอดขาย') + 'ลดลงในตอนนี้ 🎉 (เทียบ ' + escHtml(lastLabel) + ' กับ ' + escHtml(prevLabel) + ')</div>'; return; }
   var headHtml = '<th>สินค้า</th>' + monthKeys.map(function (mk) { return '<th>' + escHtml(monthKeyToThaiLabel_(mk)) + '</th>'; }).join('')
@@ -1184,7 +1188,8 @@ function getReportDataFor_(key) {
   if (key === 'signups') return lastSignupsData;
   if (key === 'membersGen') return lastMembersGenData;
   if (key === 'provinceRegion') return lastProvinceData;
-  if (key === 'decliningProducts') return lastDecliningData;
+  if (key === 'decliningProducts') return lastDecliningData && { completeMonthKeys: lastDecliningData.completeMonthKeys, inProgressMonth: lastDecliningData.inProgressMonth, metric: 'ยอดขาย (บาท)', declining: lastDecliningData.declining, note: lastDecliningData.note };
+  if (key === 'decliningOrders') return lastDecliningData && { completeMonthKeys: lastDecliningData.completeMonthKeys, inProgressMonth: lastDecliningData.inProgressMonth, metric: 'จำนวนออเดอร์ (ไม่คิดมูลค่า)', declining: lastDecliningData.decliningOrders, note: lastDecliningData.note };
   if (!lastDashboardData) return null;
   switch (key) {
     case 'overview': return lastDashboardData.overview;
