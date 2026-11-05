@@ -37,7 +37,7 @@ var REPORT_TITLES = {
   signups: 'สมาชิกใหม่รายสัปดาห์',
   membersGen: 'สมาชิก LINE แบ่งตาม Gen',
   provinceRegion: 'จังหวัด/ภูมิภาคที่ซื้อเรา',
-  decliningProducts: 'สินค้าที่ยอดขายกำลังลดลง Top 10',
+  decliningProducts: 'สินค้าที่จำนวนออเดอร์กำลังลดลง Top 10',
   campaigns: 'โปรโมชั่น'
 };
 
@@ -916,19 +916,22 @@ function renderDecliningProducts(data) {
   var monthKeys = data.completeMonthKeys || [];
   var lastLabel = monthKeyToThaiLabel_(monthKeys[monthKeys.length - 1]);
   var prevLabel = monthKeyToThaiLabel_(monthKeys[monthKeys.length - 2]);
-  if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่ยอดขายลดลงในตอนนี้ 🎉 (เทียบ ' + escHtml(lastLabel) + ' กับ ' + escHtml(prevLabel) + ')</div>'; return; }
+  // ⚡ (5/11/69) นับเป็นจำนวนออเดอร์ (ไม่คิดจากมูลค่า) — API รุ่นเก่ายังไม่มี metric ก็แสดงเป็นบาทแบบเดิม
+  var byOrders = data.metric === 'orders';
+  var cell = function (m) { return byOrders ? fmtNum(m.orders || 0) + ' ออเดอร์' : fmtMoney(m.amount); };
+  if (!list.length) { body.innerHTML = '<div class="empty-note">ไม่มีสินค้าที่' + (byOrders ? 'จำนวนออเดอร์' : 'ยอดขาย') + 'ลดลงในตอนนี้ 🎉 (เทียบ ' + escHtml(lastLabel) + ' กับ ' + escHtml(prevLabel) + ')</div>'; return; }
   var headHtml = '<th>สินค้า</th>' + monthKeys.map(function (mk) { return '<th>' + escHtml(monthKeyToThaiLabel_(mk)) + '</th>'; }).join('')
-    + '<th>ส่วนต่าง (บาท)</th><th>% เทียบเดือนก่อน</th>'
+    + '<th>ส่วนต่าง (' + (byOrders ? 'ออเดอร์' : 'บาท') + ')</th><th>% เทียบเดือนก่อน</th>'
     + (data.inProgressMonth ? '<th>' + escHtml(monthKeyToThaiLabel_(data.inProgressMonth)) + ' (เดือนนี้ ยังไม่จบ)</th>' : '');
   var rowsHtml = list.map(function (p) {
     var tag = p.grouped ? '<span class="tag tag-grouped">จัดกลุ่มแล้ว</span>' : '<span class="tag tag-ungrouped">ยังไม่จัดกลุ่ม</span>';
     var monthCells = p.monthly.map(function (m, i) {
       var isLast = i === p.monthly.length - 1;
-      return '<td' + (isLast ? ' class="decline-neg"' : '') + '>' + fmtMoney(m.amount) + '</td>';
+      return '<td' + (isLast ? ' class="decline-neg"' : '') + '>' + cell(m) + '</td>';
     }).join('');
-    var inProgressCell = data.inProgressMonth ? ('<td class="decline-cur">' + (p.inProgress ? fmtMoney(p.inProgress.amount) : fmtMoney(0)) + '</td>') : '';
+    var inProgressCell = data.inProgressMonth ? ('<td class="decline-cur">' + cell(p.inProgress || { orders: 0, amount: 0 }) + '</td>') : '';
     return '<tr><td>' + escHtml(p.name) + ' ' + tag + '</td>' + monthCells
-      + '<td class="decline-neg">' + fmtMoney(p.diffAmount) + '</td>'
+      + '<td class="decline-neg">' + (byOrders ? fmtNum(p.diffOrders) + ' ออเดอร์' : fmtMoney(p.diffAmount)) + '</td>'
       + '<td class="decline-neg">' + p.changePct.toFixed(0) + '%</td>'
       + inProgressCell + '</tr>';
   }).join('');
