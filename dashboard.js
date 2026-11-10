@@ -416,6 +416,9 @@ function drawOverviewChart(ov) {
 // ==================== Report 2: Keyword-grouped products ====================
 
 function renderProductGroups(list) { renderGroupTableWithChart_('productGroups', list, 'productGroupsChart'); }
+// Top 3 bars get their own colours (gold / silver / bronze) so the leaders stand out; the rest stay green.
+var RANK_COLORS_ = ['#f9a825', '#78909c', '#b26a2e'];
+function rankColor_(i) { return RANK_COLORS_[i] || PALETTE_[0]; }
 function renderGroupTableWithChart_(sectionKey, list, chartId) {
   var body = document.getElementById(sectionKey + '-body');
   if (!list || !list.length) { body.innerHTML = '<div class="empty-note">ไม่มีข้อมูลในช่วงวันที่นี้</div>'; return; }
@@ -435,11 +438,11 @@ function renderGroupTableWithChart_(sectionKey, list, chartId) {
   var isMobile_ = window.innerWidth <= 640;
   if (isMobile_) {
     var maxAmount_ = Math.max.apply(null, top.map(function (it) { return it.amount; }).concat([1]));
-    var hbarHtml = '<div class="hbar-list">' + top.map(function (it) {
+    var hbarHtml = '<div class="hbar-list">' + top.map(function (it, i) {
       var pct = maxAmount_ ? Math.max(2, it.amount / maxAmount_ * 100) : 2;
       return '<div class="hbar-row">'
         + '<div class="hbar-top"><span class="hbar-label">' + escHtml(it.name) + '</span><span class="hbar-value">' + fmtMoney(it.amount) + '</span></div>'
-        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + pct.toFixed(1) + '%;background:' + PALETTE_[0] + '"></div></div>'
+        + '<div class="hbar-track"><div class="hbar-fill" style="width:' + pct.toFixed(1) + '%;background:' + rankColor_(i) + '"></div></div>'
         + '</div>';
     }).join('') + '</div>';
     body.innerHTML = hbarHtml
@@ -450,7 +453,7 @@ function renderGroupTableWithChart_(sectionKey, list, chartId) {
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>สินค้า/กลุ่ม</th><th>จำนวน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
   renderChart(chartId, {
     type: 'bar',
-    data: { labels: top.map(function (it) { return truncateLabel_(it.name, 20); }), datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: PALETTE_[0] }] },
+    data: { labels: top.map(function (it) { return truncateLabel_(it.name, 20); }), datasets: [{ label: 'ยอดขาย', data: top.map(function (it) { return it.amount; }), backgroundColor: top.map(function (_, i) { return rankColor_(i); }) }] },
     options: Object.assign(baseChartOptions_({ x: { title: { display: true, text: 'บาท' } } }), { indexAxis: 'y', plugins: { legend: { display: false } } })
   });
 }
