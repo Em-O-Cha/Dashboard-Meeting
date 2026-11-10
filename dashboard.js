@@ -697,16 +697,23 @@ function renderMonthlyTrend(data) {
   body.innerHTML = '<div class="chart-wrap"><canvas id="monthlyTrendChart"></canvas></div>'
     + '<div class="table-scroll"><table class="data-table"><thead><tr><th>เดือน</th><th>ยอดขาย</th><th>ออเดอร์</th></tr></thead><tbody>'
     + months.map(function (m, i) {
-      return '<tr><td><span class="legend-dot" style="background:' + colors[i] + '"></span>' + escHtml(monthKeyToThaiLabel_(m.month)) + '</td><td>' + fmtMoney(m.revenue) + '</td><td>' + fmtNum(m.orders) + '</td></tr>';
+      return '<tr><td><span class="legend-dot" style="background:' + colors[i] + '"></span>' + escHtml(monthKeyToThaiLabel_(m.month))
+        + (i === months.length - 1 && m.month === (new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2)) ? ' <span style="font-size:11px;color:#e65100">(ยังไม่จบเดือน)</span>' : '') + '</td><td>' + fmtMoney(m.revenue) + '</td><td>' + fmtNum(m.orders) + '</td></tr>';
     }).join('')
     + '</tbody></table></div>';
+  // ⚡ (10/11/69) กราฟเส้นให้เห็นแนวโน้ม · เดือนปัจจุบัน (ยังไม่จบเดือน) ต่อด้วยเส้นประ
+  var nowMk_ = new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2);
+  var lastIdx_ = months.length - 1, partial_ = months[lastIdx_] && months[lastIdx_].month === nowMk_;
   renderChart('monthlyTrendChart', {
-    type: 'bar',
+    type: 'line',
     data: {
-      labels: months.map(function (m) { return monthKeyToThaiLabel_(m.month); }),
-      datasets: [{ label: 'ยอดขาย', data: months.map(function (m) { return m.revenue; }), backgroundColor: colors }]
+      labels: months.map(function (m, i) { return monthKeyToThaiLabel_(m.month) + (partial_ && i === lastIdx_ ? ' (ยังไม่จบเดือน)' : ''); }),
+      datasets: [{ label: 'ยอดขาย', data: months.map(function (m) { return m.revenue; }),
+        borderColor: '#a50d0c', backgroundColor: 'rgba(165,13,12,.08)', fill: true, tension: 0.3, cubicInterpolationMode: 'monotone', borderWidth: 3,
+        pointRadius: 6, pointHoverRadius: 8, pointBackgroundColor: colors, pointBorderColor: '#fff', pointBorderWidth: 2,
+        segment: { borderDash: function (ctx) { return partial_ && ctx.p1DataIndex === lastIdx_ ? [6, 5] : undefined; } } }]
     },
-    options: Object.assign(baseChartOptions_({ y: { title: { display: true, text: 'บาท' } } }), { plugins: { legend: { display: false } } }),
+    options: Object.assign(baseChartOptions_({ x: { offset: true, ticks: { font: { family: 'Kanit' } } }, y: { beginAtZero: true, grace: '8%', title: { display: true, text: 'บาท' } } }), { plugins: { legend: { display: false } } }),
     plugins: [valueLabelPlugin_([0], function (v) { return fmtMoney(v); })]
   });
 }
