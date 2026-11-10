@@ -366,25 +366,15 @@ function valueLabelPlugin_(datasetIndexes, formatFn) {
 
 function renderOverview(ov, cancelledCount, unpaidLineShopCount) {
   var body = document.getElementById('overview-body');
-  var prev = ov.previousPeriod;
   var noteBits = [];
   if (cancelledCount) noteBits.push('ไม่รวมออเดอร์ที่ยกเลิก ' + fmtNum(cancelledCount) + ' รายการ');
   if (unpaidLineShopCount) noteBits.push('ไม่รวมออเดอร์ Line Shop ที่ยังไม่ชำระเงิน ' + fmtNum(unpaidLineShopCount) + ' รายการ');
   var cancelledNote = noteBits.length ? ('<div class="info-note">' + noteBits.join(' · ') + ' ในทุกรายงานของแดชบอร์ดนี้</div>') : '';
-  var deltaCard = '';
-  if (prev) {
-    deltaCard = '<div class="stat-card"><div class="label">ยอดขายช่วงก่อนหน้า (' + prev.dateFrom + ' – ' + prev.dateTo + ')</div>'
-      + '<div class="value" style="font-size:16px">' + fmtMoney(prev.revenue) + '</div>'
-      + (prev.revenueChangePct !== null ? '<div class="delta ' + (prev.revenueChangePct >= 0 ? 'up' : 'down') + '">' + (prev.revenueChangePct >= 0 ? '▲' : '▼') + ' ' + Math.abs(prev.revenueChangePct).toFixed(1) + '% เทียบยอดขาย</div>' : '')
-      + (prev.ordersChangePct !== null ? '<div class="delta ' + (prev.ordersChangePct >= 0 ? 'up' : 'down') + '">' + (prev.ordersChangePct >= 0 ? '▲' : '▼') + ' ' + Math.abs(prev.ordersChangePct).toFixed(1) + '% เทียบออเดอร์</div>' : '')
-      + '</div>';
-  }
   body.innerHTML = cancelledNote
     + '<div class="stat-grid">'
     + '<div class="stat-card"><div class="label">ยอดขายรวม</div><div class="value">' + fmtMoney(ov.totalRevenue) + '</div></div>'
     + '<div class="stat-card"><div class="label">จำนวนออเดอร์</div><div class="value">' + fmtNum(ov.totalOrders) + '</div></div>'
     + '<div class="stat-card"><div class="label">มูลค่าเฉลี่ย/ออเดอร์ (AOV)</div><div class="value">' + fmtMoney(ov.aov) + '</div></div>'
-    + deltaCard
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-bottom:10px">'
     + '<button class="preset-btn ' + (overviewGranularity === 'daily' ? 'active' : '') + '" onclick="setOverviewGranularity(\'daily\')">รายวัน</button>'
