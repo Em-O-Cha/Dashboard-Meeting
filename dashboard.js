@@ -1171,18 +1171,39 @@ function restoreAiPanels_() {
     if (savedAll && savedAll.analysis) {
       var note = '<div class="ai-saved-note">🕓 บันทึกไว้เมื่อ ' + escHtml(formatSavedAt_(savedAll.savedAt)) + ' — จะแสดงค้างไว้จนกว่าจะกดวิเคราะห์ใหม่</div>';
       var html = note + buildAiHtml_(savedAll.analysis);
-      document.getElementById('ai-aiAll').innerHTML = html;
-      document.getElementById('ai-aiAll').classList.add('show');
+      setAiPanelHtml_('ai-aiAll', '🤖 ผลวิเคราะห์ภาพรวมจาก AI', html);
       var dirAllEl = document.getElementById('ai-dir-aiAll');
       if (dirAllEl && savedAll.direction) dirAllEl.value = savedAll.direction;
     }
   } catch (e) {}
 }
+// ⚡ (10/11/69) ผล AI ซ่อน/แสดงได้ (จำไว้ในเครื่องนี้) — ซ่อนแล้วเหลือแถบเล็ก ๆ กดเปิดดูใหม่ได้
+function aiCollapsedSet_(panelId, on) {
+  try { var m = JSON.parse(localStorage.getItem('ai_collapsed') || '{}'); if (on) m[panelId] = 1; else delete m[panelId]; localStorage.setItem('ai_collapsed', JSON.stringify(m)); } catch (e) {}
+}
+function aiCollapsedGet_(panelId) {
+  try { return !!JSON.parse(localStorage.getItem('ai_collapsed') || '{}')[panelId]; } catch (e) { return false; }
+}
+function setAiPanelHtml_(panelId, title, inner) {
+  var el = document.getElementById(panelId);
+  if (!el) return;
+  el.innerHTML = '<div class="ai-panel-hd"><span style="flex:1">' + title + '</span>'
+    + '<button type="button" class="ai-toggle" onclick="toggleAiPanel_(\'' + panelId + '\')"></button></div>'
+    + '<div class="ai-panel-content">' + inner + '</div>';
+  el.classList.add('show');
+  el.classList.toggle('collapsed', aiCollapsedGet_(panelId));
+}
+function toggleAiPanel_(panelId) {
+  var el = document.getElementById(panelId);
+  if (!el) return;
+  var on = !el.classList.contains('collapsed');
+  el.classList.toggle('collapsed', on);
+  aiCollapsedSet_(panelId, on);
+}
 function renderAiPanel(panelId, analysis, savedAt) {
   var el = document.getElementById(panelId);
   var note = savedAt ? '<div class="ai-saved-note">🕓 บันทึกไว้เมื่อ ' + escHtml(formatSavedAt_(savedAt)) + ' — จะแสดงค้างไว้จนกว่าจะกดวิเคราะห์ใหม่</div>' : '';
-  el.innerHTML = '<div class="ai-panel-hd">🤖 ผลวิเคราะห์จาก AI</div>' + note + buildAiHtml_(analysis);
-  el.classList.add('show');
+  setAiPanelHtml_(panelId, '🤖 ผลวิเคราะห์จาก AI', note + buildAiHtml_(analysis));
 }
 function getReportDataFor_(key) {
   if (key === 'targets') return lastTargetsData;
@@ -1217,6 +1238,7 @@ function runAiAnalyze(key, btnEl) {
   var direction = dirEl ? dirEl.value.trim() : '';
   var panel = document.getElementById('ai-' + key);
   panel.classList.add('show');
+  panel.classList.remove('collapsed'); aiCollapsedSet_('ai-' + key, false);
   panel.innerHTML = '<div class="ai-loading">🤖 กำลังวิเคราะห์ด้วย AI...</div>';
   btnEl.disabled = true;
   apiPost('aiAnalyze', { reportKey: key, reportTitle: REPORT_TITLES[key] || key, reportData: JSON.stringify(data), dateFrom: STATE.dateFrom, dateTo: STATE.dateTo, direction: direction })
@@ -1255,8 +1277,8 @@ function openOverallAI() {
     .then(function (r) {
       var html = (r && r.success) ? buildAiHtml_(r.analysis) : '<div class="error-note">วิเคราะห์ไม่สำเร็จ: ' + escHtml(r ? r.error : '') + '</div>';
       modalBody.innerHTML = html;
-      document.getElementById('ai-aiAll').innerHTML = html;
-      document.getElementById('ai-aiAll').classList.add('show');
+      aiCollapsedSet_('ai-aiAll', false);
+      setAiPanelHtml_('ai-aiAll', '🤖 ผลวิเคราะห์ภาพรวมจาก AI', html);
       document.getElementById('aiAll-body').innerHTML = '';
       if (r && r.success) saveAiResult_('aiAll', r.analysis, direction);
     })

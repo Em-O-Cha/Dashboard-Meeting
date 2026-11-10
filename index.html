@@ -216,6 +216,12 @@ table.data-table tbody tr:hover{background:#fafafa;}
 .ai-panel{margin-top:16px;border-radius:12px;background:linear-gradient(135deg,#f5f1ff,#fdf5ff);border:1.5px solid #e4d9fb;padding:16px;display:none;}
 .ai-panel.show{display:block;}
 .ai-panel-hd{font-size:13px;font-weight:700;color:#5b3ec2;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.ai-toggle{border:1.5px solid #d5c6f7;background:#fff;color:#5b3ec2;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ai-toggle::after{content:'▲ ซ่อน';}
+.ai-panel.collapsed{padding:8px 14px;}
+.ai-panel.collapsed .ai-panel-hd{margin-bottom:0;}
+.ai-panel.collapsed .ai-panel-content{display:none;}
+.ai-panel.collapsed .ai-toggle::after{content:'▼ แสดงผลวิเคราะห์';}
 .ai-summary{font-size:13.5px;line-height:1.7;margin-bottom:12px;}
 .ai-block-title{font-size:12.5px;font-weight:700;color:#5b3ec2;margin:12px 0 6px;}
 .ai-list{font-size:13px;line-height:1.7;padding-left:18px;}
@@ -617,6 +623,6 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 </div>
 
 <script src="chart.umd.js"></script>
-<script src="dashboard.js?v=40"></script>
+<script src="dashboard.js?v=41"></script>
 </body>
 </html>
