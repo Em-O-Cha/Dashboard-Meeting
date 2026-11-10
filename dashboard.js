@@ -956,8 +956,8 @@ function chiliRangeBoxes_(r, kpi) {
   var h = '<div style="font-weight:700;margin:14px 0 2px;color:#1565c0">📅 ช่วงวันที่ที่เลือก: ' + escHtml(label) + '</div>';
   if (!(r.q120 + r.q230)) return h + '<div class="empty-note" style="margin-bottom:12px">ไม่มียอดขายพริกผัดในช่วงนี้</div>';
   return h + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 14px">'
-    + kpi('🆕 120 กรัม', r.q120, r.a120, chiliPct_(r.q120, r.q230), '#e3f2fd', '#1565c0')
-    + kpi('230 กรัม', r.q230, r.a230, chiliPct_(r.q230, r.q120), '#e8f5e9', '#2e7d32') + '</div>';
+    + kpi('🆕 120 กรัม', r.q120, r.a120, chiliPct_(r.q120, r.q230), '#fff3e0', '#e65100')
+    + kpi('230 กรัม', r.q230, r.a230, chiliPct_(r.q230, r.q120), '#ffebee', '#c62828') + '</div>';
 }
 function renderChiliSize(cs) {
   var body = document.getElementById('chiliSize-body');
