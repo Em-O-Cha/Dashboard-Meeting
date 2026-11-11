@@ -8,7 +8,7 @@ var CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbxjQ2iLlExID0Yqry27F-IFGlBHYEbWN6DK4Y63pv5bZhqkLdlCn3ZuedvTglTRZQBvPQ/exec'
 };
 
-var STATE = { password: '', dateFrom: '', dateTo: '' };
+var STATE = { password: '', execToken: '', dateFrom: '', dateTo: '' };
 var lastDashboardData = null, lastTargetsData = null, lastCustomersData = null, lastSignupsData = null, lastMembersGenData = null, lastProvinceData = null, lastDecliningData = null, lastMonthlyTrendData = null;
 var isLoadingAll = false;
 var lastCustomerDetail = {};
@@ -96,10 +96,15 @@ function parseApiResponse_(res) {
     try { return JSON.parse(text); } catch (e) { throw new Error('ระบบตอบกลับไม่ถูกต้อง (ไม่ใช่ JSON)'); }
   });
 }
+// เปิดจาก Dashboard ผู้บริหาร (ระบบงานองค์กร) = ใช้ตั๋วผู้บริหารแทนรหัสผ่าน
+function authParams_(params) {
+  if (STATE.execToken) params.execToken = STATE.execToken;
+  else params.password = STATE.password;
+}
 function apiGet(action, params) {
   params = Object.assign({}, params || {});
   params.action = action;
-  params.password = STATE.password;
+  authParams_(params);
   var qs = Object.keys(params).filter(function (k) { return params[k] !== undefined && params[k] !== null; })
     .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
   return fetch(CONFIG.API_URL + '?' + qs, { method: 'GET' }).then(parseApiResponse_);
@@ -107,7 +112,7 @@ function apiGet(action, params) {
 function apiPost(action, params) {
   params = Object.assign({}, params || {});
   params.action = action;
-  params.password = STATE.password;
+  authParams_(params);
   return fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(params) }).then(parseApiResponse_);
 }
 
@@ -1402,6 +1407,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   restoreAiPanels_();
 
+  if (initExecEmbed_()) return;
   var savedPw = null;
   try { savedPw = sessionStorage.getItem('emocha.dashboard.password'); } catch (e) {}
   if (savedPw && !isApiNotConfigured_()) {
@@ -1409,3 +1415,29 @@ document.addEventListener('DOMContentLoaded', function () {
     apiGet('verifyPassword', {}).then(function (r) { if (r && r.success) enterApp(); }).catch(function () {});
   }
 });
+
+
+// ==================== เปิดในกรอบของ Dashboard ผู้บริหาร (em-o-cha.github.io/Department) ====================
+// หน้าแม่ส่งตั๋วผู้บริหารมาทาง postMessage (ไม่ใส่ในลิงก์) · หน้านี้ส่งความสูงกลับไปให้กรอบปรับขนาดตาม
+function initExecEmbed_() {
+  if (window.parent === window || !/[?&]embed=exec\b/.test(location.search)) return false;
+  document.documentElement.classList.add('embed-exec');
+  var origin = location.origin;
+  showLoginErr('');
+  document.getElementById('loginErr').textContent = 'กำลังเชื่อมต่อจากระบบผู้บริหาร…';
+  window.addEventListener('message', function (ev) {
+    if (ev.source !== window.parent || ev.origin !== origin || !ev.data || ev.data.type !== 'exec-token') return;
+    STATE.execToken = String(ev.data.token || '');
+    apiGet('verifyPassword', {}).then(function (r) {
+      if (r && r.success) { document.getElementById('loginErr').textContent = ''; enterApp(); }
+      else document.getElementById('loginErr').textContent = (r && r.error) || 'เชื่อมต่อไม่สำเร็จ';
+    }).catch(function (e) { document.getElementById('loginErr').textContent = 'เชื่อมต่อไม่สำเร็จ: ' + e.message; });
+  });
+  var lastH = 0, sendH = function () {
+    var h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    if (Math.abs(h - lastH) > 4) { lastH = h; window.parent.postMessage({ type: 'meeting-height', h: h }, origin); }
+  };
+  if (window.ResizeObserver) new ResizeObserver(sendH).observe(document.body); else setInterval(sendH, 800);
+  window.parent.postMessage({ type: 'meeting-ready' }, origin);
+  return true;
+}
