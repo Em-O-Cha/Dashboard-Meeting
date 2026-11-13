@@ -285,6 +285,70 @@ table.data-table tbody tr:hover{background:#fafafa;}
 .share-value{color:var(--g6);font-size:12.5px;white-space:nowrap;}
 
 footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
+
+/* ==================== ธีมสีเข้ม (ให้เหมือน Marketing Command Center) — ทับสีเดิมทั้งหน้า ==================== */
+:root{
+  --page-bg:#0a1020; --card-bg:#111a2e; --border:#26365a; --bd:#26365a;
+  --td:#e8eefb; --g6:#94a3c2; --g8:#cbd5e1; --gd:#e8eefb; --gm:#ff7a45; --gp:#17223b; --gb:#26365a;
+  --up:#34d399; --down:#f87171;
+  --brand-gradient:linear-gradient(135deg,#ff7a45 0%,#ffb347 100%);
+  --lg-bg:#111a2e; --lg-dark:#060a14; --lg-light:#1d2a46; --lg-text:#e8eefb; --lg-muted:#94a3c2; --lg-accent:#ff9b6e;
+}
+body{background:var(--page-bg);color:var(--td);}
+.topbar,.navtabs{background:#111a2e;border-color:var(--border);}
+.daterow{background:#0e1628;border-color:var(--border);}
+.btn{color:#1a0e05;box-shadow:0 3px 10px rgba(255,122,69,.25);}
+.btn-outline{background:transparent;color:#ff9b6e;border-color:#ff7a45;}
+.btn-ghost{color:var(--g6);border-color:var(--border);}
+.btn-ai{color:#fff;}
+.preset-btn{background:#17223b;border-color:var(--border);color:var(--g8);}
+.preset-btn.active{background:#ff7a45;border-color:#ff7a45;color:#1a0e05;}
+.daterow input[type=date],.ai-direction-input,.kw-search,.kw-target-select,.kw-group-row textarea.gkw{background:#17223b;border-color:var(--border);color:var(--td);color-scheme:dark;}
+.navtab{text-decoration:none;}
+.navtab.active{color:#fff;border-bottom-color:#ff7a45;}
+.navtab:hover{color:#fff;}
+section.report{background:#111a2e;border:1px solid var(--border);box-shadow:none;}
+.report-title .num{background:#ff7a45;color:#1a0e05;}
+.badge-static{background:rgba(251,146,60,.16);color:#fdba74;}
+.ai-saved-note{background:#17223b;}
+.stat-card{background:#17223b;border:1px solid var(--border);}
+.stat-card .value{color:#fff;}
+.hbar-track{background:#17223b;}
+.province-overall{background:#0e1628;}
+.region-chip{background:rgba(91,155,255,.15);color:#9cc3ff;}
+table.data-table td.pct-cell{background:rgba(91,155,255,.10);color:#9cc3ff;}
+table.data-table tr.row-total td.pct-cell{background:rgba(91,155,255,.18);}
+table.data-table td.pct-cell.pct-rank-1{background:rgba(52,211,153,.16);color:#6ee7b7;}
+table.data-table td.pct-cell.pct-rank-2{background:rgba(91,155,255,.18);color:#9cc3ff;}
+table.data-table td.pct-cell.pct-rank-3{background:rgba(251,191,36,.16);color:#fcd34d;}
+table.data-table td.decline-neg{color:#f87171;}
+table.data-table tbody tr:hover{background:#17223b;}
+table.chili-table thead th{background:rgba(251,146,60,.16);color:#fdba74;}
+table.chili-table tr.row-total td{background:rgba(251,146,60,.24);color:#ffe0c2;}
+table.chili-table tr.chili-period td{background:rgba(251,146,60,.08);}
+table.chili-table tr.chili-sub td{color:var(--g6);}
+.tag-ungrouped{background:rgba(251,146,60,.16);color:#fdba74;}
+.error-note{color:#fca5a5;background:rgba(248,113,113,.12);}
+.info-note{color:#9cc3ff;background:rgba(91,155,255,.10);}
+.ai-panel{background:linear-gradient(135deg,#1b1838,#221a3d);border-color:#3b2f6b;}
+.ai-panel-hd,.ai-block-title,.ai-loading{color:#c4b5fd;}
+.ai-toggle{background:#17223b;border-color:#3b2f6b;color:#c4b5fd;}
+.ai-reco,.ai-raw{background:#17223b;border-color:#2c2a55;}
+.ai-reco b{color:#ddd6fe;}
+.ai-reco .tradeoffs{color:#d6b4a6;}
+.mo-card{background:#111a2e;color:var(--td);}
+.mo-hd{background:linear-gradient(135deg,#ff7a45,#ffb347);color:#1a0e05;}
+.mo-close{color:#1a0e05;background:rgba(0,0,0,.12);}
+.kw-tab{background:#17223b;border-color:var(--border);color:var(--g8);}
+.kw-tab.active{background:#ff7a45;border-color:#ff7a45;color:#1a0e05;}
+.kw-group-row{border-color:var(--border);}
+.kw-group-row input.gname{background:transparent;color:var(--td);}
+.kw-quickadd{background:#17223b;color:#ff9b6e;}
+.cd-section-title{color:#ff9b6e;}
+.cd-order-products{color:#6ee7b7;}
+footer.appfoot{color:#64748b;}
+.login-field input::placeholder{color:#64748b;}
+.login-title{line-height:1.3;}
 </style>
 </head>
 <body>
@@ -294,7 +358,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
   <div class="login-ring" id="loginRing">
     <form class="login-disc" id="loginForm" autocomplete="on">
       <div class="login-avatar"><img src="logo-em-o-cha.png" alt="Em-O-Cha"></div>
-      <div class="login-title">ยินดีต้อนรับ</div>
+      <div class="login-title">ยินดีต้อนรับสู่<br>Dashboard ฝ่ายขาย</div>
       <div class="login-sub">แดชบอร์ดรายงานยอดขาย — เอมโอชา</div>
       <div class="login-field">
         <svg class="lf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9V7a5 5 0 0 0-10 0v2H5v13h14V9h-2zm-8 0V7a3 3 0 0 1 6 0v2H9z"/></svg>
@@ -624,6 +688,6 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 </div>
 
 <script src="chart.umd.js"></script>
-<script src="dashboard.js?v=44"></script>
+<script src="dashboard.js?v=45"></script>
 </body>
 </html>

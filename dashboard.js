@@ -285,9 +285,20 @@ function loadAll() {
 
 // ==================== Chart helpers ====================
 
+// ธีมสีเข้ม: ตัวอักษร/เส้นตารางของกราฟเป็นสีอ่อน · เปลี่ยนแดงเลือดหมู/เขียวเข้มเดิมเป็นส้ม/เขียวสว่างให้เห็นชัดบนพื้นมืด
+var DARK_COLOR_MAP_ = [[/#a50d0c/gi, '#ff7a45'], [/rgba\(165,\s*13,\s*12,/g, 'rgba(255,122,69,'], [/rgba\(46,\s*125,\s*50,/g, 'rgba(52,211,153,'], [/#2e7d32/gi, '#34d399']];
+function darkColor_(c) {
+  if (typeof c === 'string') { DARK_COLOR_MAP_.forEach(function (m) { c = c.replace(m[0], m[1]); }); return c; }
+  if (Array.isArray(c)) return c.map(darkColor_);
+  return c;
+}
 function renderChart(canvasId, config) {
   var canvas = document.getElementById(canvasId);
   if (!canvas) return;
+  if (window.Chart && !Chart.__darkTheme) { Chart.defaults.color = '#94a3c2'; Chart.defaults.borderColor = 'rgba(38,54,90,.75)'; Chart.__darkTheme = true; }
+  ((config.data && config.data.datasets) || []).forEach(function (ds) {
+    ['borderColor', 'backgroundColor', 'pointBackgroundColor', 'pointBorderColor'].forEach(function (k) { if (ds[k]) ds[k] = darkColor_(ds[k]); });
+  });
   if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
   applyValueLabelHeadroom_(config);
   chartInstances[canvasId] = new Chart(canvas.getContext('2d'), config);
@@ -350,7 +361,7 @@ function valueLabelPlugin_(datasetIndexes, formatFn) {
           var label = formatFn ? formatFn(value) : String(value);
           ctx.save();
           ctx.font = "600 11px 'Kanit', sans-serif";
-          ctx.fillStyle = '#302121';
+          ctx.fillStyle = '#e8eefb';
           if (isHorizontal) {
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
@@ -650,7 +661,7 @@ function renderTimeSlots(ts) {
     var cells = (byDow[dow] || []).map(function (c) {
       var alpha = c && maxRevenue ? Math.max(.06, c.revenue / maxRevenue) : .06;
       var title = label + ' ' + (c ? c.hour : '') + ':00 — ยอดขาย ' + fmtMoney(c ? c.revenue : 0) + ' (' + fmtNum(c ? c.orders : 0) + ' ออเดอร์)';
-      return '<td style="background:rgba(46,125,50,' + alpha.toFixed(2) + ')" title="' + escAttr(title) + '"></td>';
+      return '<td style="background:rgba(52,211,153,' + alpha.toFixed(2) + ')" title="' + escAttr(title) + '"></td>';
     }).join('');
     return '<tr><td class="dowlabel">' + escHtml(label) + '</td>' + cells + '</tr>';
   }).join('');
@@ -995,7 +1006,7 @@ function renderChiliSize(cs) {
     return rows;
   }
   var h = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0">' + kpi('🆕 120 กรัม', cs.q120, cs.a120, chiliPct_(cs.q120, cs.q230), '#fff3e0', '#e65100') + kpi('230 กรัม', cs.q230, cs.a230, chiliPct_(cs.q230, cs.q120), '#ffebee', '#c62828') + '</div>'
-    + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0;background:#eee">' + (cs.q120 ? '<div style="flex:' + cs.q120 + ';background:#fb8c00"></div>' : '') + (cs.q230 ? '<div style="flex:' + cs.q230 + ';background:#c62828"></div>' : '') + '</div>'
+    + '<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0;background:#26365a">' + (cs.q120 ? '<div style="flex:' + cs.q120 + ';background:#fb8c00"></div>' : '') + (cs.q230 ? '<div style="flex:' + cs.q230 + ';background:#c62828"></div>' : '') + '</div>'
     + '<div class="report-sub" style="margin-bottom:12px">ยอดเงิน 120 ก. = ' + chiliPct_(cs.a120, cs.a230) + ' ของยอดพริกผัดทั้งหมด</div>'
     + chiliRangeBoxes_(cs.range, kpi)
     + '<div style="font-weight:700;margin:10px 0 6px">แยกตามรส (กระปุก)</div>'
