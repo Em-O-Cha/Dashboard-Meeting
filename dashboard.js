@@ -725,8 +725,8 @@ function renderMonthlyTrend(data) {
 }
 
 // ==================== Report 4: Sales + bills per platform per month (last 12 months, all-time) ====================
-// ⚡ (25/11/69) ผู้ใช้ขอ: เทียบยอดขาย + จำนวนบิล แต่ละแพลตฟอร์ม แยกเดือน เป็นกราฟแท่งรวมกัน
-// แต่ละเดือน 2 แท่ง: ทึบ = ยอดขาย (แกนซ้าย) · จาง = จำนวนบิล (แกนขวา) · สีในแท่ง = แพลตฟอร์ม (Ad)
+// ⚡ (25/11/69) ผู้ใช้ขอ: เทียบยอดขาย + จำนวนบิล แต่ละแพลตฟอร์ม แยกเดือน
+// ผู้ใช้เลือก (25/11/69): 2 กราฟแท่งแยก (ยอดขาย / จำนวนบิล) · แกน X = เดือน · แต่ละเดือนมีแท่งของแต่ละแพลตฟอร์มเรียงกัน (ไม่ซ้อน)
 
 var PLATFORM_MAX_ = 7;   // แสดงแยกได้สูงสุด 7 แพลตฟอร์ม ที่เหลือรวมเป็น "อื่น ๆ"
 function renderPlatformMonthly(data) {
@@ -754,10 +754,16 @@ function renderPlatformMonthly(data) {
   var cell = function (o) {
     return o.orders ? '<td class="pm-cell"><b>' + fmtMoney(o.revenue) + '</b><small>' + fmtNum(o.orders) + ' บิล</small></td>' : '<td class="pm-cell pm-zero">–</td>';
   };
+  var partialNow = months[months.length - 1].month === nowMk;
   var legend = '<div class="pm-legend">' + cols.map(function (c) {
     return '<span><span class="legend-dot" style="background:' + color[c] + '"></span>' + escHtml(c) + '</span>';
-  }).join('') + '<span class="pm-key"><i class="pm-solid"></i>ยอดขาย (บาท · แกนซ้าย)</span><span class="pm-key"><i class="pm-light"></i>จำนวนบิล (แกนขวา)</span>' + (months[months.length - 1].month === (new Date().getFullYear() + '-' + ('0' + (new Date().getMonth() + 1)).slice(-2)) ? '<span class="pm-key">* = เดือนนี้ ยังไม่จบเดือน</span>' : '') + '</div>';
-  body.innerHTML = legend + '<div class="chart-wrap tall"><canvas id="platformMonthlyChart" role="img" aria-label="กราฟแท่งยอดขายและจำนวนบิลแยกแพลตฟอร์ม รายเดือน 12 เดือนย้อนหลัง"></canvas></div>'
+  }).join('') + (partialNow ? '<span class="pm-key">* = เดือนนี้ ยังไม่จบเดือน</span>' : '') + '</div>';
+  var chartBox = function (id, title, aria) {
+    return '<div class="pm-chart"><div class="pm-ctitle">' + title + '</div>' + legend
+      + '<div class="pm-hint">← เลื่อนซ้าย-ขวาเพื่อดูเดือนอื่น (เปิดมาที่เดือนล่าสุด)</div><div class="pm-scroll"><div class="chart-wrap tall pm-wide"><canvas id="' + id + '" role="img" aria-label="' + aria + '"></canvas></div></div></div>';
+  };
+  body.innerHTML = chartBox('platformMonthlyRev', '📊 ยอดขาย (บาท) แยกแพลตฟอร์ม รายเดือน', 'กราฟแท่งยอดขายแต่ละแพลตฟอร์ม รายเดือน 12 เดือนย้อนหลัง')
+    + chartBox('platformMonthlyBill', '🧾 จำนวนบิล แยกแพลตฟอร์ม รายเดือน', 'กราฟแท่งจำนวนบิลแต่ละแพลตฟอร์ม รายเดือน 12 เดือนย้อนหลัง')
     + (ads.length > shown.length ? '<div class="info-note">แพลตฟอร์มที่ยอดขายน้อย ' + (ads.length - shown.length) + ' ช่องทางรวมไว้ใน "อื่น ๆ": ' + escHtml(ads.slice(shown.length).join(', ')) + '</div>' : '')
     + '<div class="table-scroll"><table class="data-table pm-table"><thead><tr><th>เดือน</th>'
     + cols.map(function (c) { return '<th><span class="legend-dot" style="background:' + color[c] + '"></span>' + escHtml(c) + '</th>'; }).join('')
@@ -773,34 +779,37 @@ function renderPlatformMonthly(data) {
     }).join('') + cell({ revenue: allRev, orders: allOrd }) + '</tr>'
     + '</tbody></table></div>';
   var lastIdx = rows.length - 1, partial = rows[lastIdx] && rows[lastIdx].month === nowMk;
-  var ds = [];
-  cols.forEach(function (c) {
-    ds.push({ label: c, _kind: 'rev', stack: 'rev', yAxisID: 'y', data: rows.map(function (r) { return r.v[c].revenue; }), backgroundColor: color[c], borderRadius: 2 });
-  });
-  cols.forEach(function (c) {
-    ds.push({ label: c, _kind: 'bill', stack: 'bill', yAxisID: 'y1', data: rows.map(function (r) { return r.v[c].orders; }), backgroundColor: hexToRgba_(color[c], 0.3), borderColor: color[c], borderWidth: 1, borderRadius: 2 });
-  });
-  var opts = baseChartOptions_({
-    x: { stacked: true, ticks: { font: { family: 'Kanit' } } },
-    y: { stacked: true, beginAtZero: true, position: 'left', title: { display: true, text: 'ยอดขาย (บาท)' }, ticks: { callback: function (v) { return v >= 1000 ? (v / 1000).toLocaleString('th-TH') + 'k' : v; } } },
-    y1: { stacked: true, beginAtZero: true, position: 'right', title: { display: true, text: 'จำนวนบิล' }, grid: { drawOnChartArea: false } }
-  });
-  opts.plugins = {
-    legend: { display: false },
-    tooltip: {
-      filter: function (it) { return it.raw > 0; },
-      itemSort: function (a, b) { return (a.dataset._kind === b.dataset._kind ? 0 : a.dataset._kind === 'rev' ? -1 : 1) || b.raw - a.raw; },
-      callbacks: {
-        title: function (items) { var i = items[0].dataIndex; return label(rows[i].month) + (partial && i === lastIdx ? ' (ยังไม่จบเดือน)' : '') + ' · รวม ' + fmtMoney(rows[i].revenue) + ' · ' + fmtNum(rows[i].orders) + ' บิล'; },
-        label: function (it) { return ' ' + it.dataset.label + ': ' + (it.dataset._kind === 'rev' ? fmtMoney(it.raw) : fmtNum(it.raw) + ' บิล'); }
+  var labels = rows.map(function (r, i) { return label(r.month) + (partial && i === lastIdx ? '*' : ''); });
+  var draw = function (id, kind) {
+    var isRev = kind === 'revenue';
+    var opts = baseChartOptions_({
+      x: { ticks: { font: { family: 'Kanit' } } },
+      y: { beginAtZero: true, grace: '5%', title: { display: true, text: isRev ? 'ยอดขาย (บาท)' : 'จำนวนบิล' },
+        ticks: { callback: function (v) { return isRev && v >= 1000 ? (v / 1000).toLocaleString('th-TH') + 'k' : v.toLocaleString('th-TH'); } } }
+    });
+    opts.plugins = {
+      legend: { display: false },
+      tooltip: {
+        filter: function (it) { return it.raw > 0; },
+        itemSort: function (a, b) { return b.raw - a.raw; },
+        callbacks: {
+          title: function (items) { var i = items[0].dataIndex; return label(rows[i].month) + (partial && i === lastIdx ? ' (ยังไม่จบเดือน)' : '') + ' · รวม ' + (isRev ? fmtMoney(rows[i].revenue) : fmtNum(rows[i].orders) + ' บิล'); },
+          label: function (it) { return ' ' + it.dataset.label + ': ' + (isRev ? fmtMoney(it.raw) : fmtNum(it.raw) + ' บิล'); }
+        }
       }
-    }
+    };
+    renderChart(id, {
+      type: 'bar',
+      data: { labels: labels, datasets: cols.map(function (c) {
+        return { label: c, data: rows.map(function (r) { return r.v[c][kind]; }), backgroundColor: color[c], borderRadius: 3, categoryPercentage: 0.82, barPercentage: 0.92 };
+      }) },
+      options: opts
+    });
   };
-  renderChart('platformMonthlyChart', {
-    type: 'bar',
-    data: { labels: rows.map(function (r, i) { return label(r.month) + (partial && i === lastIdx ? '*' : ''); }), datasets: ds },
-    options: opts
-  });
+  draw('platformMonthlyRev', 'revenue');
+  draw('platformMonthlyBill', 'orders');
+  // จอแคบ (มือถือ) กราฟเลื่อนซ้าย-ขวาได้ → เปิดมาที่เดือนล่าสุด
+  Array.prototype.forEach.call(body.querySelectorAll('.pm-scroll'), function (el) { el.scrollLeft = el.scrollWidth; });
 }
 
 // ==================== Report 10: Customers ====================

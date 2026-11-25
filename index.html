@@ -184,8 +184,12 @@ table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
 .pm-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;margin:0 0 8px;color:var(--g7,#444);}
 .pm-legend>span{display:inline-flex;align-items:center;}
 .pm-key i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;}
-.pm-key .pm-solid{background:#616161;}
-.pm-key .pm-light{background:rgba(97,97,97,.3);border:1px solid #616161;}
+.pm-chart{border:1px solid var(--border);border-radius:12px;padding:12px 12px 4px;margin-bottom:14px;}
+.pm-ctitle{font-size:14px;font-weight:700;color:var(--gd);margin-bottom:6px;}
+.pm-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.pm-wide{min-width:760px;}
+.pm-hint{display:none;font-size:12px;color:var(--g6);margin:0 0 4px;}
+@media (max-width:820px){.pm-hint{display:block;}}
 .pm-table th{white-space:nowrap;}
 .pm-table td.pm-month,.pm-table th:first-child{white-space:nowrap;font-weight:600;position:sticky;left:0;background:#fff;z-index:1;box-shadow:1px 0 0 var(--border);}
 .pm-table tr.row-total td.pm-month{background:#fff;}
@@ -394,7 +398,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
     <section class="report" id="sec-platformMonthly">
       <div class="report-hd">
         <div><div class="report-title"><span class="num">4</span> ยอดขาย &amp; จำนวนบิล แยกแพลตฟอร์ม รายเดือน <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
-        <div class="report-sub">12 เดือนย้อนหลัง · แต่ละเดือนมี 2 แท่ง: แท่งทึบ = ยอดขาย (บาท, แกนซ้าย) · แท่งจาง = จำนวนบิล (แกนขวา) · สีในแท่ง = แพลตฟอร์ม (คอลัมน์ "Ad" ในชีต Revenue เหมือนข้อ 8)</div></div>
+        <div class="report-sub">12 เดือนย้อนหลัง · กราฟบน = ยอดขาย · กราฟล่าง = จำนวนบิล · แต่ละเดือนมีแท่งของแต่ละแพลตฟอร์มเรียงกัน (สีตามแพลตฟอร์ม · คอลัมน์ "Ad" ในชีต Revenue เหมือนข้อ 8)</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="platformMonthly">🤖 วิเคราะห์</button>
       </div>
       <div id="platformMonthly-body"><div class="empty-note">กำลังโหลด...</div></div>
@@ -650,6 +654,6 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 </div>
 
 <script src="chart.umd.js"></script>
-<script src="dashboard.js?v=47"></script>
+<script src="dashboard.js?v=49"></script>
 </body>
 </html>
