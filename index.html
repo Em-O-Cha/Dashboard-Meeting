@@ -181,6 +181,20 @@ table.data-table td.pct-cell.pct-rank-3{background:#fff1bf;color:#7a5a00;}
 .pay-name .legend-dot{flex:0 0 auto;}
 
 table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.pm-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;margin:0 0 8px;color:var(--g7,#444);}
+.pm-legend>span{display:inline-flex;align-items:center;}
+.pm-key i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;}
+.pm-key .pm-solid{background:#616161;}
+.pm-key .pm-light{background:rgba(97,97,97,.3);border:1px solid #616161;}
+.pm-table th{white-space:nowrap;}
+.pm-table td.pm-month,.pm-table th:first-child{white-space:nowrap;font-weight:600;position:sticky;left:0;background:#fff;z-index:1;box-shadow:1px 0 0 var(--border);}
+.pm-table tr.row-total td.pm-month{background:#fff;}
+.pm-table td.pm-cell{text-align:right;white-space:nowrap;}
+.pm-table td.pm-cell b{display:block;font-weight:600;}
+.pm-table td.pm-cell small{display:block;font-size:11.5px;color:var(--g6);}
+.pm-table td.pm-cell small.pm-share{color:#2c4a7c;}
+.pm-table td.pm-zero{color:#bbb;text-align:center;}
+
 /* ตารางช่องทางชำระเงินของแต่ละ Ad: คอลัมน์กว้างเท่ากันทุกตาราง ตัวเลขชิดขวา */
 table.pay-table{table-layout:fixed;min-width:420px;}
 /* รายงาน 5.1 พริกผัด: ทุกตารางคอลัมน์ตรงกัน · หัวตาราง/แถวรวมมีสี */
@@ -377,9 +391,19 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
       <div class="ai-panel" id="ai-monthlyTrend"></div>
     </section>
 
+    <section class="report" id="sec-platformMonthly">
+      <div class="report-hd">
+        <div><div class="report-title"><span class="num">4</span> ยอดขาย &amp; จำนวนบิล แยกแพลตฟอร์ม รายเดือน <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div class="report-sub">12 เดือนย้อนหลัง · แต่ละเดือนมี 2 แท่ง: แท่งทึบ = ยอดขาย (บาท, แกนซ้าย) · แท่งจาง = จำนวนบิล (แกนขวา) · สีในแท่ง = แพลตฟอร์ม (คอลัมน์ "Ad" ในชีต Revenue เหมือนข้อ 8)</div></div>
+        <button class="btn btn-outline btn-sm ai-btn" data-report="platformMonthly">🤖 วิเคราะห์</button>
+      </div>
+      <div id="platformMonthly-body"><div class="empty-note">กำลังโหลด...</div></div>
+      <div class="ai-panel" id="ai-platformMonthly"></div>
+    </section>
+
     <section class="report" id="sec-productGroups">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">4</span> สินค้าที่ขายได้ (จัดกลุ่มด้วย Keyword)</div>
+        <div><div class="report-title"><span class="num">5</span> สินค้าที่ขายได้ (จัดกลุ่มด้วย Keyword)</div>
         <div class="report-sub">สินค้าที่บันทึกชื่อไม่ตรงกันแต่เป็นตัวเดียวกัน จะถูกรวมเป็นกลุ่มเดียวกันตาม Keyword ที่ตั้งค่าไว้</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="productGroups">🤖 วิเคราะห์</button>
       </div>
@@ -389,8 +413,8 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-bestSellers">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">5</span> สินค้าขายดี (Top 10)</div>
-        <div class="report-sub">จัดอันดับจากยอดขายกลุ่มสินค้าเดียวกันกับรายงานข้อ 4</div></div>
+        <div><div class="report-title"><span class="num">6</span> สินค้าขายดี (Top 10)</div>
+        <div class="report-sub">จัดอันดับจากยอดขายกลุ่มสินค้าเดียวกันกับรายงานข้อ 5</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="bestSellers">🤖 วิเคราะห์</button>
       </div>
       <div id="bestSellers-body"><div class="empty-note">กำลังโหลด...</div></div>
@@ -399,7 +423,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-chiliSize">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">5.1</span> พริกผัดน้ำมัน 120 ก. เทียบ 230 ก.</div>
+        <div><div class="report-title"><span class="num">6.1</span> พริกผัดน้ำมัน 120 ก. เทียบ 230 ก.</div>
         <div class="report-sub">กล่องบน = ยอดรวมทั้งหมดตั้งแต่เริ่มขาย · กล่องล่าง = ช่วงวันที่ที่เลือก · % เทียบกับพริกผัดทุกขนาด (นับจากจำนวนกระปุก) รวมทุกช่องทาง · ชื่อสินค้าที่ไม่ระบุขนาด ดูจากราคาต่อชิ้น (ต่ำกว่า 120 บาท = 120 ก.)</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="chiliSize">🤖 วิเคราะห์</button>
       </div>
@@ -409,7 +433,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-purpose">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">5.2</span> ซื้อครั้งนี้สำหรับ (ลูกค้า LINE Shop)</div>
+        <div><div class="report-title"><span class="num">6.2</span> ซื้อครั้งนี้สำหรับ (ลูกค้า LINE Shop)</div>
         <div class="report-sub">ตามช่วงวันที่ที่เลือก · นับเฉพาะออเดอร์ LINE Shop ที่ชำระแล้วและลูกค้าตอบ · เริ่มถามลูกค้าตั้งแต่ 8 ต.ค. 69</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="purpose">🤖 วิเคราะห์</button>
       </div>
@@ -419,7 +443,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-loyaltySurvey">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">5.3</span> แบบสอบถามลูกค้า 7-Eleven <span class="badge-static">ยอดรวมทั้งหมด</span></div>
+        <div><div class="report-title"><span class="num">6.3</span> แบบสอบถามลูกค้า 7-Eleven <span class="badge-static">ยอดรวมทั้งหมด</span></div>
         <div class="report-sub">จากแบบสอบถามที่ลูกค้าตอบตอนส่งใบเสร็จ 7-Eleven สะสมคะแนน · ไม่ขึ้นกับช่วงวันที่ที่เลือก · ยอดเอมโอชา/คะแนน นับเฉพาะใบเสร็จที่อนุมัติ</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="loyaltySurvey">🤖 วิเคราะห์</button>
       </div>
@@ -429,8 +453,8 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-bestSellersByAd">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">6</span> สินค้าขายดี (Top 10) แยกตาม Ad</div>
-        <div class="report-sub">จัดอันดับสินค้าขายดี Top 10 เหมือนรายงานข้อ 5 แต่แยกเป็นรายช่องทาง (Ad) — ยอดรวมของรายงานข้อ 5 ยังคงไม่แยก</div></div>
+        <div><div class="report-title"><span class="num">7</span> สินค้าขายดี (Top 10) แยกตาม Ad</div>
+        <div class="report-sub">จัดอันดับสินค้าขายดี Top 10 เหมือนรายงานข้อ 6 แต่แยกเป็นรายช่องทาง (Ad) — ยอดรวมของรายงานข้อ 6 ยังคงไม่แยก</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="bestSellersByAd">🤖 วิเคราะห์</button>
       </div>
       <div id="bestSellersByAd-body"><div class="empty-note">กำลังโหลด...</div></div>
@@ -439,7 +463,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-byAd">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">7</span> ยอดขายแต่ละ Ad (ช่องทางขาย)</div>
+        <div><div class="report-title"><span class="num">8</span> ยอดขายแต่ละ Ad (ช่องทางขาย)</div>
         <div class="report-sub">Shopee / TikTok / Line Shop / Facebook / ฯลฯ ตามคอลัมน์ "Ad" ในชีต Revenue พร้อมช่องทางชำระเงินของแต่ละ Ad</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="byAd">🤖 วิเคราะห์</button>
       </div>
@@ -449,7 +473,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-adShare">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">8</span> สัดส่วนการขายแต่ละ Ad</div>
+        <div><div class="report-title"><span class="num">9</span> สัดส่วนการขายแต่ละ Ad</div>
         <div class="report-sub">เทียบสัดส่วนจากยอดขาย จำนวนออเดอร์ และจำนวนชิ้น ของแต่ละช่องทาง รวมถึงสัดส่วนจำนวนชิ้นของสินค้าแต่ละตัว (จัดกลุ่มด้วย Keyword) แยกเป็นรายช่องทาง</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="adShare">🤖 วิเคราะห์</button>
       </div>
@@ -459,7 +483,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-timeSlots">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">9</span> ช่วงเวลาที่ขายดี</div>
+        <div><div class="report-title"><span class="num">10</span> ช่วงเวลาที่ขายดี</div>
         <div class="report-sub">ยอดขาย/จำนวนออเดอร์ ตามชั่วโมง และตามวันในสัปดาห์ × ชั่วโมง</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="timeSlots">🤖 วิเคราะห์</button>
       </div>
@@ -469,7 +493,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-customers">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">10</span> ลูกค้าใหม่ / ซื้อซ้ำ / ซื้อต่อเนื่อง <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div><div class="report-title"><span class="num">11</span> ลูกค้าใหม่ / ซื้อซ้ำ / ซื้อต่อเนื่อง <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
         <div class="report-sub">รายเดือน: ลูกค้าใหม่, ลูกค้าที่ซื้อซ้ำในเดือนเดียวกัน, ลูกค้าที่ซื้อต่อเนื่องจากเดือนก่อนหน้า</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="customers">🤖 วิเคราะห์</button>
       </div>
@@ -479,7 +503,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-signups">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">11</span> สมาชิกใหม่รายสัปดาห์ + การใช้โปรสมัคร</div>
+        <div><div class="report-title"><span class="num">12</span> สมาชิกใหม่รายสัปดาห์ + การใช้โปรสมัคร</div>
         <div class="report-sub">จำนวนคนสมัครสมาชิกใหม่แต่ละสัปดาห์ และจำนวนที่ใช้/มีสิทธิ์โปรต้อนรับสมาชิกใหม่</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="signups">🤖 วิเคราะห์</button>
       </div>
@@ -489,7 +513,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-membersGen">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">12</span> สมาชิก LINE แบ่งตาม Gen <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div><div class="report-title"><span class="num">13</span> สมาชิก LINE แบ่งตาม Gen <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
         <div class="report-sub">จำนวนคนสมัครสมาชิกผ่าน LINE และยอดซื้อสะสม แยกตามช่วงอายุ (Gen) จากวันเกิดในชีต Members — คอลัมน์ "% ที่ซื้อเทียบยอดสมัคร" คำนวณจาก (จำนวนที่ซื้อ ÷ จำนวนที่สมัคร) × 100 คือสัดส่วนคนใน Gen นั้นที่สมัครแล้วซื้อจริงกี่ %</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="membersGen">🤖 วิเคราะห์</button>
       </div>
@@ -499,7 +523,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-lineFriends">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">12.1</span> เพื่อน LINE OA <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div><div class="report-title"><span class="num">13.1</span> เพื่อน LINE OA <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
         <div class="report-sub">ยังเป็นเพื่อนกี่คน ใช้งานล่าสุดเมื่อไหร่ และบล็อกไปกี่คน (ตัวเลขเดียวกับแท็บ 👥 เพื่อน LINE OA ในหน้าจัดการสมาชิก)</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="lineFriends">🤖 วิเคราะห์</button>
       </div>
@@ -509,7 +533,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-provinceRegion">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">13</span> จังหวัด/ภูมิภาคที่ซื้อเรา <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div><div class="report-title"><span class="num">14</span> จังหวัด/ภูมิภาคที่ซื้อเรา <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
         <div class="report-sub">5 อันดับจังหวัดที่มีออเดอร์มากที่สุดในแต่ละเดือน และสัดส่วนตามภูมิภาค เพื่อช่วยตัดสินใจว่าควรยิงแอดเจาะกลุ่มภาคไหน (อิงจังหวัดจัดส่งของแต่ละออเดอร์ในชีต Revenue)</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="provinceRegion">🤖 วิเคราะห์</button>
       </div>
@@ -519,8 +543,8 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-decliningProducts">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">14</span> สินค้าที่ยอดขายกำลังลดลง Top 10 <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
-        <div class="report-sub">เทียบยอดขายรายเดือนของสินค้าทุกตัว (จัดกลุ่มด้วย Keyword เดียวกับข้อ 4 สินค้าที่ขายได้) เดือนล่าสุดที่จบแล้วเทียบกับเดือนก่อนหน้า พร้อมข้อมูลเดือนปัจจุบันที่ยังไม่จบไว้ดูเป็นแนวโน้ม</div></div>
+        <div><div class="report-title"><span class="num">15</span> สินค้าที่ยอดขายกำลังลดลง Top 10 <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div class="report-sub">เทียบยอดขายรายเดือนของสินค้าทุกตัว (จัดกลุ่มด้วย Keyword เดียวกับข้อ 5 สินค้าที่ขายได้) เดือนล่าสุดที่จบแล้วเทียบกับเดือนก่อนหน้า พร้อมข้อมูลเดือนปัจจุบันที่ยังไม่จบไว้ดูเป็นแนวโน้ม</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="decliningProducts">🤖 วิเคราะห์</button>
       </div>
       <div id="decliningProducts-body"><div class="empty-note">กำลังโหลด...</div></div>
@@ -529,8 +553,8 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-decliningOrders">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">14.1</span> สินค้าที่จำนวนออเดอร์กำลังลดลง Top 10 <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
-        <div class="report-sub">นับจำนวนออเดอร์ที่มีสินค้านั้นรายเดือน (ไม่คิดจากมูลค่า · จัดกลุ่มด้วย Keyword เดียวกับข้อ 4) เดือนล่าสุดที่จบแล้วเทียบกับเดือนก่อนหน้า พร้อมเดือนปัจจุบันที่ยังไม่จบไว้ดูแนวโน้ม</div></div>
+        <div><div class="report-title"><span class="num">15.1</span> สินค้าที่จำนวนออเดอร์กำลังลดลง Top 10 <span class="badge-static">ไม่ขึ้นกับช่วงวันที่ที่เลือก</span></div>
+        <div class="report-sub">นับจำนวนออเดอร์ที่มีสินค้านั้นรายเดือน (ไม่คิดจากมูลค่า · จัดกลุ่มด้วย Keyword เดียวกับข้อ 5) เดือนล่าสุดที่จบแล้วเทียบกับเดือนก่อนหน้า พร้อมเดือนปัจจุบันที่ยังไม่จบไว้ดูแนวโน้ม</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="decliningOrders">🤖 วิเคราะห์</button>
       </div>
       <div id="decliningOrders-body"><div class="empty-note">กำลังโหลด...</div></div>
@@ -539,7 +563,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-campaigns">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">15</span> โปรโมชั่น — ยอดขายและจำนวนออเดอร์</div>
+        <div><div class="report-title"><span class="num">16</span> โปรโมชั่น — ยอดขายและจำนวนออเดอร์</div>
         <div class="report-sub">แยกตามคอลัมน์ "Campaign" ในชีต Revenue</div></div>
         <button class="btn btn-outline btn-sm ai-btn" data-report="campaigns">🤖 วิเคราะห์</button>
       </div>
@@ -549,7 +573,7 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 
     <section class="report" id="sec-aiAll">
       <div class="report-hd">
-        <div><div class="report-title"><span class="num">16</span> 🤖 AI สรุปและวิเคราะห์แนวโน้มภาพรวมทุกรายงาน</div>
+        <div><div class="report-title"><span class="num">17</span> 🤖 AI สรุปและวิเคราะห์แนวโน้มภาพรวมทุกรายงาน</div>
         <div class="report-sub">เชื่อมโยงข้อมูลจากทุกรายงานในช่วงวันที่ที่เลือก พร้อมแนวทางดำเนินการหลายทางเลือก</div></div>
         <div class="ai-btn-group">
           <input type="text" id="ai-dir-aiAll" class="ai-direction-input" placeholder="บอกทิศทางที่ต้องการให้ AI เน้น (ไม่ใส่ก็ได้)">
@@ -626,6 +650,6 @@ footer.appfoot{text-align:center;padding:20px;font-size:11.5px;color:#aaa;}
 </div>
 
 <script src="chart.umd.js"></script>
-<script src="dashboard.js?v=46"></script>
+<script src="dashboard.js?v=47"></script>
 </body>
 </html>
