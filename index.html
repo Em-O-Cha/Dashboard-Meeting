@@ -111,6 +111,12 @@ section.report{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0
 .report-title{font-size:16px;font-weight:600;color:var(--td);display:flex;align-items:center;gap:8px;}
 .report-title .num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--gp);color:var(--gd);font-size:12px;font-weight:700;}
 .report-sub{font-size:12px;color:var(--g6);margin-top:4px;}
+/* เปิดในหน้าผู้บริหาร (?embed=exec): หัวข้อรายงานเป็นแถบสีทองของฝ่ายขาย #B8860B ตัวขาว (ผู้ใช้ขอ 27/11/69 ให้หัวข้อเด่นชัด) */
+.embed-exec .report-hd>div:first-child{flex:1 1 320px;min-width:0;}
+.embed-exec .report-title{background:linear-gradient(135deg,#B8860B,#9C7409);color:#fff;font-size:16.5px;font-weight:700;padding:9px 14px;border-radius:10px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(184,134,11,.28);}
+.embed-exec .report-title .num{background:#fff;color:#7A5A08;}
+.embed-exec .report-title .badge-static{background:rgba(255,255,255,.92);color:#7A5A08;}
+.embed-exec .report-sub{margin-top:6px;}
 .badge-static{font-size:10.5px;background:#fff3e0;color:#e65100;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap;}
 
 .ai-btn-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
