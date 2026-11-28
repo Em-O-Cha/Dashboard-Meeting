@@ -291,6 +291,7 @@ function renderChart(canvasId, config) {
   if (!canvas) return;
   if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
   applyValueLabelHeadroom_(config);
+  if (window.I18N_CHART) window.I18N_CHART(config);   // ?lang=en: แปลป้ายกราฟเป็นอังกฤษ
   chartInstances[canvasId] = new Chart(canvas.getContext('2d'), config);
 }
 // Reserves extra room above the tallest labeled bar's value-axis max so valueLabelPlugin_'s
